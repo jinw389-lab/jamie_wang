@@ -1,0 +1,1994 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="baidu-site-verification" content="code-8XHgqNvUKa" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+    <meta name="description" content="关于后端程序设计 | 这里是 jamie 的个人博客。">
+    <meta name="keywords"  content="jamie, java, spring, jamie的博客, 博客, 个人网站, 互联网, 后端, jamie's blog">
+    <meta name="theme-color" content="#000000">
+
+    <!-- Apply the saved theme before rendering to avoid a color flash. -->
+    <script>
+        (function () {
+            var theme = null;
+            try {
+                theme = localStorage.getItem('jamie-blog-theme');
+            } catch (error) {}
+
+            if (['classic', 'eye', 'dark'].indexOf(theme) === -1) {
+                theme = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches
+                    ? 'dark'
+                    : 'classic';
+            }
+
+            document.documentElement.setAttribute('data-theme', theme);
+        })();
+    </script>
+    
+    <!-- Open Graph -->
+    <meta property="og:title" content="Dinger 配置异常如何触发 Nacos Client 2.0.4 缺陷，并让 Java 容器增长到 7000 线程 - jamie的博客 | jamie Blog">
+    
+    <meta property="og:type" content="article">
+    <meta property="og:description" content="
+  事故发生：2026 年 8 月 24 日 19:30
+服务恢复：2026 年 8 月 24 日 20:00
+原因排查与复盘：2026 年 8 月 25 日至 26 日
+最后更新：2026 年 8 月 26 日
+
+
+">
+    
+    <meta property="article:published_time" content="2026-08-24T00:00:00Z">
+    
+    
+    
+    <meta property="article:tag" content="工作项目思考">
+    
+    <meta property="article:tag" content="Java">
+    
+    <meta property="article:tag" content="Nacos">
+    
+    <meta property="article:tag" content="线上事故">
+    
+    
+    <meta property="og:image" content="https://jinw389-lab.github.io/images/wexin.png">
+    <meta property="og:url" content="https://jinw389-lab.github.io/blog/2026/08/24/Dinger%E9%85%8D%E7%BD%AE%E5%BC%82%E5%B8%B8%E8%A7%A6%E5%8F%91Nacos-Client%E7%BA%BF%E7%A8%8B%E8%80%97%E5%B0%BD%E4%BA%8B%E6%95%85%E5%A4%8D%E7%9B%98/">
+    <meta property="og:site_name" content="jamie的博客 | jamie Blog">
+    
+    <title>Dinger 配置异常如何触发 Nacos Client 2.0.4 缺陷，并让 Java 容器增长到 7000 线程 - jamie的博客 | jamie Blog</title>
+
+    <!-- Web App Manifest -->
+    <link rel="manifest" href="/pwa/manifest.json">
+
+    <!-- Favicon -->
+    <link rel="shortcut icon" href="/img/logo.jpg">
+    
+    <!-- Canonical URL -->
+    <link rel="canonical" href="https://jinw389-lab.github.io/blog/2026/08/24/Dinger%E9%85%8D%E7%BD%AE%E5%BC%82%E5%B8%B8%E8%A7%A6%E5%8F%91Nacos-Client%E7%BA%BF%E7%A8%8B%E8%80%97%E5%B0%BD%E4%BA%8B%E6%95%85%E5%A4%8D%E7%9B%98/">
+
+    <!-- Bootstrap Core CSS -->
+    <link rel="stylesheet" href="/css/bootstrap.min.css">
+
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="/css/hux-blog.min.css">
+    <link rel="stylesheet" href="/css/interaction.css">
+    <link rel="stylesheet" href="/css/themes.css">
+    <link rel="stylesheet" href="/css/search.css">
+    <script src="/js/theme-switcher.js" defer></script>
+
+    <!-- Custom Fonts -->
+    <!-- <link href="http://maxcdn.bootstrapcdn.com/font-awesome/4.3.0/css/font-awesome.min.css" rel="stylesheet" type="text/css"> -->
+    <!-- Hux change font-awesome CDN to qiniu -->
+    <!-- <link href="//cdnjs.cloudflare.com/ajax/libs/font-awesome/4.6.3/css/font-awesome.min.css" rel="stylesheet" type="text/css"> -->
+
+
+    <!-- HTML5 Shim and Respond.js IE8 support of HTML5 elements and media queries -->
+    <!-- WARNING: Respond.js doesn't work if you view the page via file:// -->
+    <!--[if lt IE 9]>
+        <script src="https://oss.maxcdn.com/libs/html5shiv/3.7.0/html5shiv.js"></script>
+        <script src="https://oss.maxcdn.com/libs/respond.js/1.4.2/respond.min.js"></script>
+    <![endif]-->
+
+    <!-- ga & ba script hoook -->
+    <script></script>
+</head>
+
+
+<!-- hack iOS CSS :active style -->
+<body ontouchstart="">
+
+    <!-- Navigation -->
+
+<nav class="navbar navbar-default navbar-custom navbar-fixed-top">
+
+    <div class="container-fluid">
+        <!-- Brand and toggle get grouped for better mobile display -->
+        <div class="navbar-header page-scroll">
+            <button type="button" class="navbar-toggle">
+                <span class="sr-only">Toggle navigation</span>
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+            </button>
+            <a class="navbar-brand" href="/">jamie Blog</a>
+        </div>
+
+        <!-- Collect the nav links, forms, and other content for toggling -->
+        <div id="huxblog_navbar">
+            <div class="navbar-collapse">
+                <ul class="nav navbar-nav navbar-right">
+                    <li>
+                        <a href="/">首页</a>
+                    </li>
+                    
+                    
+                    
+                    
+                    <li>
+                        
+                            <a href="/about/">关于</a>
+                        
+                    </li>
+                    
+                    
+                    
+                    <li>
+                        
+                        <a href="/archive/">归档</a>
+                        
+                    </li>
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                </ul>
+            </div>
+        </div>
+        <!-- /.navbar-collapse -->
+    </div>
+    <!-- /.container -->
+</nav>
+<div class="floating-tools edge-right is-collapsed" data-floating-tools>
+    <button class="floating-tools-handle" type="button" data-floating-tools-toggle aria-expanded="false" aria-label="展开快捷工具，可拖动调整位置" title="点击展开，拖动调整位置">
+    </button>
+    <div class="floating-tools-panel">
+        <a class="floating-tool floating-home-button" href="/" aria-label="首页" title="首页">
+            <svg class="floating-nav-icon" viewBox="0 0 20 20" aria-hidden="true">
+                <path d="m3 9.5 7-6 7 6"></path>
+                <path d="M5.5 8.5V17h9V8.5M8.5 17v-4.5h3V17"></path>
+            </svg>
+            <span class="floating-tool-label">首页</span>
+        </a>
+        <a class="floating-tool floating-about-button" href="/about/" aria-label="关于" title="关于">
+            <svg class="floating-nav-icon" viewBox="0 0 20 20" aria-hidden="true">
+                <circle cx="10" cy="6.5" r="3"></circle>
+                <path d="M4.5 17c.45-3.15 2.3-4.75 5.5-4.75s5.05 1.6 5.5 4.75"></path>
+            </svg>
+            <span class="floating-tool-label">关于</span>
+        </a>
+        <a class="floating-tool floating-archive-button" href="/archive/" aria-label="归档" title="归档">
+            <svg class="floating-nav-icon" viewBox="0 0 20 20" aria-hidden="true">
+                <path d="M3 5.5h14V17H3zM2.5 3h15v3h-15zM8 9.5h4"></path>
+            </svg>
+            <span class="floating-tool-label">归档</span>
+        </a>
+        <button class="floating-tool floating-search-button" type="button" data-search-open aria-label="打开文章搜索" title="搜索">
+            <svg class="floating-search-icon" viewBox="0 0 24 24" aria-hidden="true">
+                <circle cx="11" cy="11" r="6.5"></circle>
+                <path d="m16 16 4 4"></path>
+            </svg>
+            <span class="floating-tool-label">搜索</span>
+        </button>
+        <button class="floating-tool theme-switcher" type="button" data-theme-toggle aria-live="polite">
+            <span class="theme-switcher-icon" data-theme-icon aria-hidden="true">◐</span>
+            <span class="floating-tool-label" data-theme-label>经典</span>
+        </button>
+    </div>
+</div>
+<script>
+    // Drop Bootstarp low-performance Navbar
+    // Use customize navbar with high-quality material design animation
+    // in high-perf jank-free CSS3 implementation
+    var $body   = document.body;
+    var $toggle = document.querySelector('.navbar-toggle');
+    var $navbar = document.querySelector('#huxblog_navbar');
+    var $collapse = document.querySelector('.navbar-collapse');
+
+    var __HuxNav__ = {
+        close: function(){
+            $navbar.className = " ";
+            // wait until animation end.
+            setTimeout(function(){
+                // prevent frequently toggle
+                if($navbar.className.indexOf('in') < 0) {
+                    $collapse.style.height = "0px"
+                }
+            },400)
+        },
+        open: function(){
+            $collapse.style.height = "auto"
+            $navbar.className += " in";
+        }
+    }
+
+    // Bind Event
+    $toggle.addEventListener('click', function(e){
+        if ($navbar.className.indexOf('in') > 0) {
+            __HuxNav__.close()
+        }else{
+            __HuxNav__.open()
+        }
+    })
+
+    /**
+     * Since Fastclick is used to delegate 'touchstart' globally
+     * to hack 300ms delay in iOS by performing a fake 'click',
+     * Using 'e.stopPropagation' to stop 'touchstart' event from 
+     * $toggle/$collapse will break global delegation.
+     * 
+     * Instead, we use a 'e.target' filter to prevent handler
+     * added to document close HuxNav.  
+     *
+     * Also, we use 'click' instead of 'touchstart' as compromise
+     */
+    document.addEventListener('click', function(e){
+        if(e.target == $toggle) return;
+        if(e.target.className == 'icon-bar') return;
+        __HuxNav__.close();
+    })
+</script>
+
+    <div class="blog-search" data-blog-search data-index-url="/search.json" hidden>
+    <div class="blog-search-backdrop" data-search-close></div>
+    <section class="blog-search-dialog" role="dialog" aria-modal="true" aria-labelledby="blog-search-title">
+        <h2 class="sr-only" id="blog-search-title">搜索文章</h2>
+        <div class="blog-search-input-row">
+            <svg class="blog-search-icon" viewBox="0 0 24 24" aria-hidden="true">
+                <circle cx="11" cy="11" r="6.5"></circle>
+                <path d="m16 16 4 4"></path>
+            </svg>
+            <input
+                class="blog-search-input"
+                type="search"
+                inputmode="search"
+                autocomplete="off"
+                spellcheck="false"
+                placeholder="搜索标题、标签或文章内容"
+                aria-label="搜索文章"
+                aria-controls="blog-search-results"
+            >
+            <button class="blog-search-close" type="button" data-search-close aria-label="关闭搜索">×</button>
+        </div>
+        <div class="blog-search-status" data-search-status aria-live="polite">输入关键词开始搜索</div>
+        <div class="blog-search-results" id="blog-search-results" data-search-results role="listbox"></div>
+        <div class="blog-search-help" aria-hidden="true">
+            <span><kbd>↑</kbd><kbd>↓</kbd> 选择</span>
+            <span><kbd>Enter</kbd> 打开</span>
+            <span><kbd>Esc</kbd> 关闭</span>
+        </div>
+    </section>
+</div>
+
+
+    <!-- Image to hack wechat -->
+<!-- <img src="/img/icon_wechat.png" width="0" height="0"> -->
+<!-- <img src="/img/home-bg.jpg" width="0" height="0"> -->
+
+<!-- Post Header -->
+
+
+
+<style type="text/css">
+    header.intro-header{
+        position: relative;
+        background-image: url('/img/home-bg.jpg');
+        background: ;
+    }
+
+    
+</style>
+
+<header class="intro-header" >
+
+    <div class="header-mask"></div>
+    
+    <div class="container">
+        <div class="row">
+            <div class="col-lg-8 col-lg-offset-2 col-md-10 col-md-offset-1">
+                <div class="post-heading">
+                    <div class="tags">
+                        
+                        <a class="tag" href="/archive/?tag=%E5%B7%A5%E4%BD%9C%E9%A1%B9%E7%9B%AE%E6%80%9D%E8%80%83" title="工作项目思考">工作项目思考</a>
+                        
+                        <a class="tag" href="/archive/?tag=Java" title="Java">Java</a>
+                        
+                        <a class="tag" href="/archive/?tag=Nacos" title="Nacos">Nacos</a>
+                        
+                        <a class="tag" href="/archive/?tag=%E7%BA%BF%E4%B8%8A%E4%BA%8B%E6%95%85" title="线上事故">线上事故</a>
+                        
+                    </div>
+                    <h1>Dinger 配置异常如何触发 Nacos Client 2.0.4 缺陷，并让 Java 容器增长到 7000 线程</h1>
+                    
+                    <h2 class="subheading"></h2>
+                    <span class="meta post-meta-line">
+                        Posted by jamie Blog on 2026-08-24
+                        <span class="post-meta-separator" aria-hidden="true">·</span>
+                        <span class="post-view-count" aria-label="文章阅读量">阅读 <span id="busuanzi_page_pv">--</span> 次</span>
+                    </span>
+                </div>
+            </div>
+        </div>
+    </div>
+</header>
+
+
+
+
+
+
+
+<!-- Post Content -->
+<article>
+    <div class="container">
+        <div class="row">
+
+    <!-- Post Container -->
+            <div class="
+                col-lg-8 col-lg-offset-2
+                col-md-10 col-md-offset-1
+                post-container">
+
+                <!-- Multi-Lingual -->
+                
+
+				<blockquote>
+  <p>事故发生：2026 年 8 月 24 日 19:30<br />
+服务恢复：2026 年 8 月 24 日 20:00<br />
+原因排查与复盘：2026 年 8 月 25 日至 26 日<br />
+最后更新：2026 年 8 月 26 日</p>
+</blockquote>
+
+<blockquote>
+  <p>关键词：Java、Docker、Nacos、Spring Cloud Alibaba、Dinger、Logback、native thread、PID 耗尽</p>
+</blockquote>
+
+<h2 id="背景">背景</h2>
+
+<p>生产环境中的多个 Java 服务使用 Docker 部署，技术栈主要包括：</p>
+
+<ul>
+  <li>Java 8</li>
+  <li>Spring Boot 2.6.11</li>
+  <li>Spring Cloud 2021.0.4</li>
+  <li>Spring Cloud Alibaba 2021.0.4.0</li>
+  <li>Nacos Client 2.0.4</li>
+  <li>Logback 1.2.11</li>
+  <li>Dinger 1.2.1 / 2.1.0</li>
+</ul>
+
+<p>一次功能发布中，我们将 Dinger 从 1.2.1 升级到了 2.1.0，以支持向飞书发送消息；随后又在 Nacos 的共享配置 <code class="language-plaintext highlighter-rouge">dinger.yml</code> 中增加了 ByteTalk 配置。</p>
+
+<p>不久后，宿主机出现无法执行命令、SSH 连接中断等严重故障。最终发现，四个 Java 服务分别创建了 7000 多个线程，几乎耗尽了宿主机可用 PID。</p>
+
+<p>本文记录完整排查过程、最终根因以及后续改进措施。</p>
+
+<h2 id="核心结论">核心结论</h2>
+
+<p>这次事故不能只归结为“Dinger 配置错误”。Dinger 新旧版本不兼容是触发条件，<strong>当前项目实际使用的 <code class="language-plaintext highlighter-rouge">nacos-client 2.0.4</code> 在 Logback 初始化过程中的资源生命周期缺陷，才是把一次配置刷新失败持续放大为数千线程的关键 Bug。</strong></p>
+
+<p>完整关系如下：</p>
+
+<div class="language-text highlighter-rouge"><div class="highlight"><pre class="highlight"><code><table class="rouge-table"><tbody><tr><td class="rouge-gutter gl"><pre class="lineno">1
+2
+3
+4
+5
+6
+7
+</pre></td><td class="rouge-code"><pre>旧版 Dinger 无法识别新配置
+  -&gt; Nacos 配置监听回调失败并反复重试
+  -&gt; nacos-client 2.0.4 每次加载日志配置都 new LoggerContext
+  -&gt; 旧 LoggerContext 未 stop，且每个上下文都开启配置扫描
+  -&gt; Logback 调度资源随刷新次数持续累积
+  -&gt; JVM 线程和容器 PIDS 不断上涨
+  -&gt; 宿主机 PID 空间最终耗尽
+</pre></td></tr></tbody></table></code></pre></div></div>
+
+<p>这里必须区分三个组件的责任：</p>
+
+<ul>
+  <li>Nacos 服务端没有每 5 秒重新发布配置，因此不是服务端推送风暴；</li>
+  <li>Logback 只是被 Nacos Client 使用，不能简单归因于“日志框架线程太多”；</li>
+  <li>真正存在资源泄漏路径的是 Nacos Client 2.0.4 对 Logback <code class="language-plaintext highlighter-rouge">LoggerContext</code> 的创建和销毁管理。</li>
+</ul>
+
+<p>事故进程终止前没有保留下完整线程栈，因此本文不会声称现场 7000 个线程已被逐一证明全部来自 Logback；但 Nacos Client 2.0.4 的上述缺陷可以从源码直接确认，并且与刷新频率、异常位置、线程增长和重启后恢复等现场证据完全吻合。</p>
+
+<h2 id="故障现象">故障现象</h2>
+
+<p>最初登录服务器后，执行 <code class="language-plaintext highlighter-rouge">top</code> 等普通命令会直接失败：</p>
+
+<div class="language-text highlighter-rouge"><div class="highlight"><pre class="highlight"><code><table class="rouge-table"><tbody><tr><td class="rouge-gutter gl"><pre class="lineno">1
+</pre></td><td class="rouge-code"><pre>-bash: fork: 无法分配内存
+</pre></td></tr></tbody></table></code></pre></div></div>
+
+<p>随后 SSH 连接也开始断开：</p>
+
+<div class="language-text highlighter-rouge"><div class="highlight"><pre class="highlight"><code><table class="rouge-table"><tbody><tr><td class="rouge-gutter gl"><pre class="lineno">1
+</pre></td><td class="rouge-code"><pre>Session.connect: java.io.IOException: End of IO Stream Read
+</pre></td></tr></tbody></table></code></pre></div></div>
+
+<p>看到“无法分配内存”时，很容易首先怀疑物理内存不足。但服务器当时仍有大量可用内存：</p>
+
+<div class="language-text highlighter-rouge"><div class="highlight"><pre class="highlight"><code><table class="rouge-table"><tbody><tr><td class="rouge-gutter gl"><pre class="lineno">1
+2
+</pre></td><td class="rouge-code"><pre>Mem:       60G total, 32G used, 6.2G free, 27G available
+Swap:       0B total
+</pre></td></tr></tbody></table></code></pre></div></div>
+
+<p>内存提交量同样没有达到上限，因此问题并不是 Java 堆内存耗尽。</p>
+
+<p>继续检查系统限制：</p>
+
+<div class="language-text highlighter-rouge"><div class="highlight"><pre class="highlight"><code><table class="rouge-table"><tbody><tr><td class="rouge-gutter gl"><pre class="lineno">1
+2
+</pre></td><td class="rouge-code"><pre>/proc/sys/kernel/pid_max = 32768
+/proc/sys/kernel/threads-max = 498818
+</pre></td></tr></tbody></table></code></pre></div></div>
+
+<p>其中 <code class="language-plaintext highlighter-rouge">pid_max=32768</code> 很关键。在 Linux 中，每一个线程都是一个 task，也会占用 PID/TID。即使进程数量不多，大量线程仍然可能耗尽 PID 空间，导致 shell 无法 <code class="language-plaintext highlighter-rouge">fork()</code> 新进程。</p>
+
+<h2 id="定位到异常-java-进程">定位到异常 Java 进程</h2>
+
+<p>通过读取 <code class="language-plaintext highlighter-rouge">/proc/[pid]/status</code>，发现四个 Java 进程的线程数都超过了 7000：</p>
+
+<div class="language-text highlighter-rouge"><div class="highlight"><pre class="highlight"><code><table class="rouge-table"><tbody><tr><td class="rouge-gutter gl"><pre class="lineno">1
+2
+3
+4
+</pre></td><td class="rouge-code"><pre>PID=12428 THREADS=7298 NAME=java
+PID=14998 THREADS=7323 NAME=java
+PID=24078 THREADS=7305 NAME=java
+PID=28788 THREADS=7508 NAME=java
+</pre></td></tr></tbody></table></code></pre></div></div>
+
+<p>对应的服务为：</p>
+
+<div class="language-text highlighter-rouge"><div class="highlight"><pre class="highlight"><code><table class="rouge-table"><tbody><tr><td class="rouge-gutter gl"><pre class="lineno">1
+2
+3
+4
+</pre></td><td class="rouge-code"><pre>zmu-web
+zmu-admin
+fishery-emq-handler
+emq-handler
+</pre></td></tr></tbody></table></code></pre></div></div>
+
+<p>四个进程合计接近 3 万个线程，再加上宿主机上的其他进程和线程，已经逼近 <code class="language-plaintext highlighter-rouge">pid_max=32768</code>。</p>
+
+<p>这也解释了为什么：</p>
+
+<ul>
+  <li><code class="language-plaintext highlighter-rouge">free -h</code> 可以运行，但 <code class="language-plaintext highlighter-rouge">top</code> 偶尔无法运行；</li>
+  <li>Bash 报 <code class="language-plaintext highlighter-rouge">fork</code> 失败；</li>
+  <li>SSH 新连接无法建立；</li>
+  <li>Java 日志中出现 <code class="language-plaintext highlighter-rouge">unable to create new native thread</code>。</li>
+</ul>
+
+<p>Docker 中的 <code class="language-plaintext highlighter-rouge">PIDS</code> 指标同样包含容器里的线程，而不只是传统意义上的进程：</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><table class="rouge-table"><tbody><tr><td class="rouge-gutter gl"><pre class="lineno">1
+2
+3
+4
+5
+</pre></td><td class="rouge-code"><pre>docker stats <span class="nt">--no-stream</span> <span class="se">\</span>
+  zmu-web zmu-admin emq-handler fishery-emq-handler <span class="se">\</span>
+
+  <span class="nt">--format</span> <span class="s1">'table {{.Name}}\t{{.PIDs}}'</span>
+
+</pre></td></tr></tbody></table></code></pre></div></div>
+
+<h2 id="第一轮怀疑业务线程池">第一轮怀疑：业务线程池</h2>
+
+<p>面对数千线程，第一反应通常是检查以下代码：</p>
+
+<ul>
+  <li><code class="language-plaintext highlighter-rouge">@Async</code> 是否使用了默认的无限制执行器；</li>
+  <li>是否频繁调用 <code class="language-plaintext highlighter-rouge">new Thread()</code>；</li>
+  <li>是否反复创建 <code class="language-plaintext highlighter-rouge">Executors.newCachedThreadPool()</code>；</li>
+  <li>MQTT 重连是否创建了大量线程；</li>
+  <li>定时任务是否重复初始化线程池；</li>
+  <li>Dinger 是否使用了无界异步线程池。</li>
+</ul>
+
+<p>项目中确实存在多个业务线程池，但进一步检查后发现：</p>
+
+<ul>
+  <li>全局 <code class="language-plaintext highlighter-rouge">AsyncExecutorConfig</code> 实现了 <code class="language-plaintext highlighter-rouge">AsyncConfigurer</code>；</li>
+  <li>主要业务线程池均设置了核心线程数、最大线程数和队列容量；</li>
+  <li>Dinger 2.1.0 的默认执行器也是有界的 <code class="language-plaintext highlighter-rouge">ThreadPoolTaskExecutor</code>；</li>
+  <li>重启后的正常线程基线中，各业务线程池数量都在配置范围内。</li>
+</ul>
+
+<p>因此，业务线程池不是本次故障的直接根因。</p>
+
+<h2 id="为什么内存充足仍然无法创建线程">为什么内存充足仍然无法创建线程</h2>
+
+<p>JVM 抛出以下异常，并不一定表示 Java 堆空间不足：</p>
+
+<div class="language-text highlighter-rouge"><div class="highlight"><pre class="highlight"><code><table class="rouge-table"><tbody><tr><td class="rouge-gutter gl"><pre class="lineno">1
+</pre></td><td class="rouge-code"><pre>java.lang.OutOfMemoryError: unable to create new native thread
+</pre></td></tr></tbody></table></code></pre></div></div>
+
+<p>创建本地线程至少会受到以下资源限制：</p>
+
+<ul>
+  <li>宿主机 PID/TID 空间；</li>
+  <li>容器 PID 限制；</li>
+  <li>用户级 <code class="language-plaintext highlighter-rouge">nproc</code> 限制；</li>
+  <li>本地线程栈内存；</li>
+  <li>cgroup 内存限制。</li>
+</ul>
+
+<p>本次事故中，宿主机 <code class="language-plaintext highlighter-rouge">pid_max</code> 是最先达到的硬限制。Java 堆还有余量，但操作系统已经无法再分配新的 task。</p>
+
+<h2 id="重启恢复但现场线程栈丢失">重启恢复，但现场线程栈丢失</h2>
+
+<p>为了恢复服务器操作能力，我们终止并重新发布了四个异常服务。重启后线程数迅速恢复正常：</p>
+
+<div class="language-text highlighter-rouge"><div class="highlight"><pre class="highlight"><code><table class="rouge-table"><tbody><tr><td class="rouge-gutter gl"><pre class="lineno">1
+2
+3
+4
+</pre></td><td class="rouge-code"><pre>zmu-web               231
+zmu-admin             366
+emq-handler           565
+fishery-emq-handler   173
+</pre></td></tr></tbody></table></code></pre></div></div>
+
+<p>这证明问题是运行过程中持续累积出来的，而不是服务启动时一次性创建了 7000 个线程。</p>
+
+<p>但这里也留下了一个排查遗憾：异常进程终止前没有成功保存完整线程栈。<code class="language-plaintext highlighter-rouge">jstack</code> 在进程已经失去响应时执行失败，而进程退出后也无法再还原当时的线程名称和调用栈。</p>
+
+<p>这意味着后续只能结合应用日志、配置历史和依赖源码进行反向取证。</p>
+
+<h2 id="日志中的关键线索">日志中的关键线索</h2>
+
+<p>在四个服务的持久化日志中，都找到了接近故障时间的异常：</p>
+
+<div class="language-text highlighter-rouge"><div class="highlight"><pre class="highlight"><code><table class="rouge-table"><tbody><tr><td class="rouge-gutter gl"><pre class="lineno">1
+2
+</pre></td><td class="rouge-code"><pre>Load Logback Configuration of Nacos fail,
+message: unable to create new native thread
+</pre></td></tr></tbody></table></code></pre></div></div>
+
+<p>与此同时，日志中反复出现：</p>
+
+<div class="language-text highlighter-rouge"><div class="highlight"><pre class="highlight"><code><table class="rouge-table"><tbody><tr><td class="rouge-gutter gl"><pre class="lineno">1
+</pre></td><td class="rouge-code"><pre>PropertySourceBootstrapConfiguration: Located property source: [...]
+</pre></td></tr></tbody></table></code></pre></div></div>
+
+<p>四个故障服务在故障前已经达到每分钟约 12 次，也就是每 5 秒刷新一次；未发生线程爆炸的服务刷新频率明显更低。</p>
+
+<p>最初我们怀疑有人或某个程序每 5 秒向 Nacos 发布配置。但查询 Nacos 数据库的 <code class="language-plaintext highlighter-rouge">his_config_info</code> 后发现，服务端并没有数百次配置修改。</p>
+
+<p>事故当天最关键的配置历史只有两条：</p>
+
+<div class="language-text highlighter-rouge"><div class="highlight"><pre class="highlight"><code><table class="rouge-table"><tbody><tr><td class="rouge-gutter gl"><pre class="lineno">1
+2
+</pre></td><td class="rouge-code"><pre>dinger.yml  11:04:48
+dinger.yml  11:04:53
+</pre></td></tr></tbody></table></code></pre></div></div>
+
+<p>这说明每 5 秒出现的刷新不是服务端持续发布，而是客户端在重复处理同一次失败的配置变更。</p>
+
+<h2 id="决定性证据dinger-配置绑定失败">决定性证据：Dinger 配置绑定失败</h2>
+
+<p>继续在包括错误日志在内的所有应用日志中搜索：</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><table class="rouge-table"><tbody><tr><td class="rouge-gutter gl"><pre class="lineno">1
+2
+3
+</pre></td><td class="rouge-code"><pre><span class="nb">grep</span> <span class="nt">-RhEni</span> <span class="se">\</span>
+  <span class="s1">'InvalidPropertiesFormatException|DingerProperties|Failed to bind.*dinger|ConfigurationPropertiesBindException|\[notify-error\]'</span> <span class="se">\</span>
+  /path/to/application/logs
+</pre></td></tr></tbody></table></code></pre></div></div>
+
+<p>最终找到了大量重复异常：</p>
+
+<div class="language-text highlighter-rouge"><div class="highlight"><pre class="highlight"><code><table class="rouge-table"><tbody><tr><td class="rouge-gutter gl"><pre class="lineno">1
+2
+3
+4
+5
+6
+</pre></td><td class="rouge-code"><pre>Failed to bind properties under 'spring.dinger.dingers'
+to java.util.Map&lt;DingerType, DingerProperties$Dinger&gt;
+
+Reason: failed to convert java.lang.String to DingerType
+caused by: java.lang.IllegalArgumentException:
+No enum constant DingerType.bytetalk
+</pre></td></tr></tbody></table></code></pre></div></div>
+
+<p>这条异常将故障与 Dinger 升级、Nacos 配置变更直接关联起来。</p>
+
+<h2 id="触发条件依赖与配置发布顺序不兼容">触发条件：依赖与配置发布顺序不兼容</h2>
+
+<p>Dinger 两个版本的枚举能力不同：</p>
+
+<div class="language-text highlighter-rouge"><div class="highlight"><pre class="highlight"><code><table class="rouge-table"><tbody><tr><td class="rouge-gutter gl"><pre class="lineno">1
+2
+</pre></td><td class="rouge-code"><pre>Dinger 1.2.1: DINGTALK、WETALK
+Dinger 2.1.0: DINGTALK、WETALK、BYTETALK
+</pre></td></tr></tbody></table></code></pre></div></div>
+
+<p>发布过程中的实际状态是：</p>
+
+<ol>
+  <li>为了支持飞书，代码将 Dinger 升级到 2.1.0；</li>
+  <li>部分服务完成了新版本构建，部分正在运行的服务仍携带旧版 Dinger 1.2.1；</li>
+  <li>Nacos 共享配置 <code class="language-plaintext highlighter-rouge">dinger.yml</code> 墧加了 <code class="language-plaintext highlighter-rouge">bytetalk</code>；</li>
+  <li>新版本服务能够识别 ByteTalk；</li>
+  <li>旧版本服务不存在 <code class="language-plaintext highlighter-rouge">BYTETALK</code> 枚举，动态绑定失败；</li>
+  <li>Nacos 客户端不断重试失败的刷新回调；</li>
+  <li>重试期间相关线程和日志资源持续累积；</li>
+  <li>最终四个旧服务分别达到 7000 多线程，耗尽宿主机 PID。</li>
+</ol>
+
+<p>配置示意如下，Token 已脱敏：</p>
+
+<div class="language-yaml highlighter-rouge"><div class="highlight"><pre class="highlight"><code><table class="rouge-table"><tbody><tr><td class="rouge-gutter gl"><pre class="lineno">1
+2
+3
+4
+5
+6
+7
+8
+</pre></td><td class="rouge-code"><pre><span class="na">spring</span><span class="pi">:</span>
+  <span class="na">dinger</span><span class="pi">:</span>
+    <span class="na">project-id</span><span class="pi">:</span> <span class="s">${spring.application.name}</span>
+    <span class="na">dingers</span><span class="pi">:</span>
+      <span class="na">wetalk</span><span class="pi">:</span>
+        <span class="na">token-id</span><span class="pi">:</span> <span class="s2">"</span><span class="s">***"</span>
+      <span class="na">bytetalk</span><span class="pi">:</span>
+        <span class="na">token-id</span><span class="pi">:</span> <span class="s2">"</span><span class="s">***"</span>
+</pre></td></tr></tbody></table></code></pre></div></div>
+
+<p>需要特别说明：当前所有服务重新构建为 Dinger 2.1.0 后，同样的小写配置能够正常工作。因此，本次事故的核心不是 YAML 大小写，而是<strong>旧运行包不具备解析 ByteTalk 配置的能力</strong>。</p>
+
+<h2 id="nacos-为什么会不断重试">Nacos 为什么会不断重试</h2>
+
+<p>对 <code class="language-plaintext highlighter-rouge">nacos-client 2.0.4</code> 的 <code class="language-plaintext highlighter-rouge">CacheData</code> 字节码进行检查后发现：</p>
+
+<ul>
+  <li>监听器处理成功后，客户端才会更新 <code class="language-plaintext highlighter-rouge">lastCallMd5</code>；</li>
+  <li>如果监听器抛出异常，则记录 <code class="language-plaintext highlighter-rouge">[notify-error]</code>；</li>
+  <li>失败路径不会将当前 MD5 标记为已成功处理；</li>
+  <li>后续检查会继续通知同一个监听器。</li>
+</ul>
+
+<p>因此，一次无法绑定的配置变更就可能演变成持续重试：</p>
+
+<div class="language-text highlighter-rouge"><div class="highlight"><pre class="highlight"><code><table class="rouge-table"><tbody><tr><td class="rouge-gutter gl"><pre class="lineno">1
+2
+3
+4
+5
+6
+</pre></td><td class="rouge-code"><pre>配置变化
+  -&gt; 刷新回调
+  -&gt; DingerProperties 绑定失败
+  -&gt; MD5 未确认
+  -&gt; 再次通知
+  -&gt; 再次失败
+</pre></td></tr></tbody></table></code></pre></div></div>
+
+<p>这解释了为什么 Nacos 数据库中只有少量修改记录，而应用日志却每 5 秒刷新一次。</p>
+
+<h2 id="正确配置与错误配置的刷新路径有什么区别">正确配置与错误配置的刷新路径有什么区别</h2>
+
+<p>排查过程中有一个很容易产生误解的问题：是不是只有错误配置才会触发
+<code class="language-plaintext highlighter-rouge">new LoggerContext()</code>，正确配置刷新时就不会？</p>
+
+<p>答案是：<strong>在本次使用的 Spring Cloud Alibaba 2021.0.4.0、Spring Cloud
+2021.0.4、Nacos Client 2.0.4 和 Legacy Bootstrap 组合中，正确和错误的可刷新
+Nacos 配置都会进入日志初始化路径；区别在于当前这次刷新结束后，客户端是否还会重试。</strong></p>
+
+<p>这里也要区分“轮询”和“刷新”：不是 Nacos 客户端每轮检查都会创建
+<code class="language-plaintext highlighter-rouge">LoggerContext</code>，而是它判断某个监听器尚未成功处理当前配置、再次通知该监听器时，
+才会重新进入刷新流程。</p>
+
+<p>完整调用关系如下：</p>
+
+<div class="language-text highlighter-rouge"><div class="highlight"><pre class="highlight"><code><table class="rouge-table"><tbody><tr><td class="rouge-gutter gl"><pre class="lineno">1
+2
+3
+4
+5
+6
+7
+8
+9
+10
+</pre></td><td class="rouge-code"><pre>Nacos 检测到配置内容 MD5 发生变化
+  -&gt; 调用配置监听器 receiveConfigInfo()
+  -&gt; NacosContextRefresher 发布 RefreshEvent
+  -&gt; RefreshEventListener 调用 ContextRefresher.refresh()
+  -&gt; LegacyContextRefresher 创建临时 SpringApplication
+  -&gt; 重新执行 Legacy Bootstrap 配置加载
+  -&gt; 触发 ApplicationEnvironmentPreparedEvent
+  -&gt; NacosLoggingListener 调用 NacosLogging.loadConfiguration()
+  -&gt; Nacos Client 2.0.4 执行 new LoggerContext()
+  -&gt; 继续完成属性更新、配置绑定和刷新回调
+</pre></td></tr></tbody></table></code></pre></div></div>
+
+<h3 id="为什么配置刷新会创建临时-bootstrap-上下文">为什么配置刷新会创建临时 Bootstrap 上下文</h3>
+
+<p>“每 5 秒”只是本次失败后的再次通知间隔，并不是创建 Bootstrap 上下文的直接原因。
+真正原因是当前 Spring Cloud 使用了 Legacy Bootstrap 刷新机制。</p>
+
+<p>Spring Cloud 的 <code class="language-plaintext highlighter-rouge">ContextRefresher</code> 并不直接理解 Nacos 传入的某一段配置文本。为了按原有
+顺序重新获得全部远程 <code class="language-plaintext highlighter-rouge">PropertySource</code>，<code class="language-plaintext highlighter-rouge">LegacyContextRefresher</code> 会复制当前
+<code class="language-plaintext highlighter-rouge">Environment</code>，创建一个临时的非 Web <code class="language-plaintext highlighter-rouge">SpringApplication</code>，重新运行 Bootstrap 配置加载，
+再把得到的新属性源合并回主应用并计算发生变化的属性。</p>
+
+<p>刷新期间，Spring Cloud 会过滤自身有全局副作用的 <code class="language-plaintext highlighter-rouge">LoggingApplicationListener</code> 和
+<code class="language-plaintext highlighter-rouge">LoggingSystemShutdownListener</code>，但本版本没有过滤 Spring Cloud Alibaba 的 Nacos Config
+和 Nacos Discovery <code class="language-plaintext highlighter-rouge">NacosLoggingListener</code>。这两个监听器都关注
+<code class="language-plaintext highlighter-rouge">ApplicationEnvironmentPreparedEvent</code>，并会调用
+<code class="language-plaintext highlighter-rouge">NacosLogging.loadConfiguration()</code>，所以一次动态刷新仍可能重新初始化 Nacos 日志系统。</p>
+
+<p>临时 Spring 上下文最终会被关闭，但 Nacos Client 2.0.4 私自创建的
+<code class="language-plaintext highlighter-rouge">LoggerContext</code> 不是由该 Spring 上下文管理的 Bean；关闭临时上下文不会替它调用
+<code class="language-plaintext highlighter-rouge">LoggerContext.stop()</code>。这正是临时上下文已经销毁，<code class="language-plaintext highlighter-rouge">logback-*</code> 后台线程仍可能存活的原因。</p>
+
+<h3 id="修改一份业务配置为什么会和-logback-扯上关系">修改一份业务配置，为什么会和 Logback 扯上关系</h3>
+
+<p><code class="language-plaintext highlighter-rouge">dinger.yml</code> 与 Logback 在业务上没有关系。二者被串联，是因为 Nacos Client 也需要输出
+<code class="language-plaintext highlighter-rouge">config.log</code>、<code class="language-plaintext highlighter-rouge">naming.log</code> 等自身日志，而 Spring Cloud Alibaba 把 Nacos 日志初始化挂在了
+Spring Boot 的 <code class="language-plaintext highlighter-rouge">ApplicationEnvironmentPreparedEvent</code> 上。</p>
+
+<p>这个设计原本服务于应用启动：环境准备完成后，Nacos 加载内置的
+<code class="language-plaintext highlighter-rouge">nacos-logback.xml</code>，为自己的 Logger 配置 Appender 和日志文件。但 Legacy Bootstrap
+动态刷新为了重新获取全部远程 <code class="language-plaintext highlighter-rouge">PropertySource</code>，会重演应用环境准备过程；Nacos 的日志
+监听器没有区分“主应用首次启动”和“临时刷新”，只要收到相同事件就重新加载日志配置。</p>
+
+<p>因此实际关系不是：</p>
+
+<div class="language-text highlighter-rouge"><div class="highlight"><pre class="highlight"><code><table class="rouge-table"><tbody><tr><td class="rouge-gutter gl"><pre class="lineno">1
+</pre></td><td class="rouge-code"><pre>dinger.yml 修改了 Logback
+</pre></td></tr></tbody></table></code></pre></div></div>
+
+<p>而是：</p>
+
+<div class="language-text highlighter-rouge"><div class="highlight"><pre class="highlight"><code><table class="rouge-table"><tbody><tr><td class="rouge-gutter gl"><pre class="lineno">1
+2
+3
+4
+5
+</pre></td><td class="rouge-code"><pre>任意可刷新的 Nacos 配置发生变化
+  -&gt; Spring Cloud 重演环境准备过程
+  -&gt; 发布 ApplicationEnvironmentPreparedEvent
+  -&gt; Nacos 日志监听器无差别响应
+  -&gt; 重新加载 nacos-logback.xml
+</pre></td></tr></tbody></table></code></pre></div></div>
+
+<p>Spring Cloud 刷新时会过滤自身的 <code class="language-plaintext highlighter-rouge">LoggingApplicationListener</code> 和
+<code class="language-plaintext highlighter-rouge">LoggingSystemShutdownListener</code>，避免它们修改全局日志状态；但当前版本的过滤逻辑没有排除
+Spring Cloud Alibaba 自己注册的两个 <code class="language-plaintext highlighter-rouge">NacosLoggingListener</code>，于是形成了这条意外耦合链路。</p>
+
+<h3 id="logbacknacosloggingloadconfiguration-到底在哪里被调用"><code class="language-plaintext highlighter-rouge">LogbackNacosLogging.loadConfiguration()</code> 到底在哪里被调用</h3>
+
+<p>项目同时引入 Nacos Config 和 Nacos Discovery Starter 时，类路径中会通过各自的
+<code class="language-plaintext highlighter-rouge">META-INF/spring.factories</code> 注册两个监听器：</p>
+
+<div class="language-text highlighter-rouge"><div class="highlight"><pre class="highlight"><code><table class="rouge-table"><tbody><tr><td class="rouge-gutter gl"><pre class="lineno">1
+2
+</pre></td><td class="rouge-code"><pre>com.alibaba.cloud.nacos.logging.NacosLoggingListener
+com.alibaba.cloud.nacos.discovery.logging.NacosLoggingListener
+</pre></td></tr></tbody></table></code></pre></div></div>
+
+<p>两个类都监听 <code class="language-plaintext highlighter-rouge">ApplicationEnvironmentPreparedEvent</code>，并执行相同代码：</p>
+
+<div class="language-java highlighter-rouge"><div class="highlight"><pre class="highlight"><code><table class="rouge-table"><tbody><tr><td class="rouge-gutter gl"><pre class="lineno">1
+2
+3
+4
+</pre></td><td class="rouge-code"><pre><span class="nd">@Override</span>
+<span class="kd">public</span> <span class="kt">void</span> <span class="nf">onApplicationEvent</span><span class="o">(</span><span class="nc">ApplicationEvent</span> <span class="n">applicationEvent</span><span class="o">)</span> <span class="o">{</span>
+    <span class="nc">NacosLogging</span><span class="o">.</span><span class="na">getInstance</span><span class="o">().</span><span class="na">loadConfiguration</span><span class="o">();</span>
+<span class="o">}</span>
+</pre></td></tr></tbody></table></code></pre></div></div>
+
+<p>这里调用的是 Nacos 日志门面。Nacos Client 2.0.4 检测到类路径存在 Logback 后，将具体实现
+设置为 <code class="language-plaintext highlighter-rouge">LogbackNacosLogging</code>：</p>
+
+<div class="language-java highlighter-rouge"><div class="highlight"><pre class="highlight"><code><table class="rouge-table"><tbody><tr><td class="rouge-gutter gl"><pre class="lineno">1
+2
+</pre></td><td class="rouge-code"><pre><span class="nc">Class</span><span class="o">.</span><span class="na">forName</span><span class="o">(</span><span class="s">"ch.qos.logback.classic.Logger"</span><span class="o">);</span>
+<span class="n">nacosLogging</span> <span class="o">=</span> <span class="k">new</span> <span class="nc">LogbackNacosLogging</span><span class="o">();</span>
+</pre></td></tr></tbody></table></code></pre></div></div>
+
+<p>门面方法随后委托给具体实现：</p>
+
+<div class="language-java highlighter-rouge"><div class="highlight"><pre class="highlight"><code><table class="rouge-table"><tbody><tr><td class="rouge-gutter gl"><pre class="lineno">1
+2
+3
+</pre></td><td class="rouge-code"><pre><span class="kd">public</span> <span class="kt">void</span> <span class="nf">loadConfiguration</span><span class="o">()</span> <span class="o">{</span>
+    <span class="n">nacosLogging</span><span class="o">.</span><span class="na">loadConfiguration</span><span class="o">();</span>
+<span class="o">}</span>
+</pre></td></tr></tbody></table></code></pre></div></div>
+
+<p>所以准确调用链是：</p>
+
+<div class="language-text highlighter-rouge"><div class="highlight"><pre class="highlight"><code><table class="rouge-table"><tbody><tr><td class="rouge-gutter gl"><pre class="lineno">1
+2
+3
+4
+5
+6
+</pre></td><td class="rouge-code"><pre>ApplicationEnvironmentPreparedEvent
+  -&gt; Config NacosLoggingListener.onApplicationEvent()
+     或 Discovery NacosLoggingListener.onApplicationEvent()
+  -&gt; NacosLogging.getInstance().loadConfiguration()
+  -&gt; LogbackNacosLogging.loadConfiguration()
+  -&gt; new LoggerContext()        // Nacos Client 2.0.4
+</pre></td></tr></tbody></table></code></pre></div></div>
+
+<p>由于 Config 和 Discovery Starter 各注册了一个监听器，一次环境准备事件可能不止一次调用
+<code class="language-plaintext highlighter-rouge">NacosLogging.loadConfiguration()</code>。这也解释了为什么正常刷新时断点可能多次进入日志初始化。</p>
+
+<h3 id="正确配置本轮仍会创建但成功后停止通知">正确配置：本轮仍会创建，但成功后停止通知</h3>
+
+<div class="language-text highlighter-rouge"><div class="highlight"><pre class="highlight"><code><table class="rouge-table"><tbody><tr><td class="rouge-gutter gl"><pre class="lineno">1
+2
+3
+4
+5
+6
+</pre></td><td class="rouge-code"><pre>收到正确配置
+  -&gt; 执行本轮 Bootstrap 刷新
+  -&gt; new LoggerContext()
+  -&gt; 属性绑定和刷新回调成功
+  -&gt; listener.lastCallMd5 更新为当前配置 MD5
+  -&gt; 两个 MD5 一致，后续检查不再通知
+</pre></td></tr></tbody></table></code></pre></div></div>
+
+<p><code class="language-plaintext highlighter-rouge">lastCallMd5</code> 的更新发生在整个监听回调成功返回之后。因此，它只能阻止后续重复通知，
+不能阻止当前这轮刷新已经发生的 <code class="language-plaintext highlighter-rouge">new LoggerContext()</code>。</p>
+
+<p>这意味着，在本次旧版本组合中，即使发布的是正确配置，一次成功的动态刷新也可能遗留
+少量新的 Logback 调度资源；只不过配置发布频率通常很低，而且成功后不会循环，所以表现为
+有限或阶梯式增长，不容易被观察到。一轮刷新还可能经过 Config、Discovery 等多个 Nacos
+日志监听器，因此也不能简单认为一次配置变更只会创建一个 <code class="language-plaintext highlighter-rouge">LoggerContext</code>。</p>
+
+<h3 id="错误配置本轮创建后失败并进入无限重试">错误配置：本轮创建后失败，并进入无限重试</h3>
+
+<div class="language-text highlighter-rouge"><div class="highlight"><pre class="highlight"><code><table class="rouge-table"><tbody><tr><td class="rouge-gutter gl"><pre class="lineno">1
+2
+3
+4
+5
+6
+7
+8
+</pre></td><td class="rouge-code"><pre>收到错误配置
+  -&gt; 执行本轮 Bootstrap 刷新
+  -&gt; new LoggerContext()
+  -&gt; 属性绑定抛出异常
+  -&gt; listener.lastCallMd5 未更新
+  -&gt; 当前配置 MD5 与监听器最后成功处理的 MD5 仍不一致
+  -&gt; 客户端再次通知
+  -&gt; 再次刷新、再次 new LoggerContext()
+</pre></td></tr></tbody></table></code></pre></div></div>
+
+<p>因此，错误配置并不是执行 <code class="language-plaintext highlighter-rouge">new LoggerContext()</code> 的条件。它的作用是让刷新回调无法完成
+“已成功处理”的确认，从而把一次刷新变成持续重试；Nacos Client 2.0.4 的 Logback
+生命周期缺陷又把每次重试放大为新的、未正确释放的后台资源。</p>
+
+<p>两种情况可以归纳为：</p>
+
+<table>
+  <thead>
+    <tr>
+      <th>场景</th>
+      <th>是否可能执行 <code class="language-plaintext highlighter-rouge">new LoggerContext()</code></th>
+      <th>后续结果</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>服务启动</td>
+      <td>会，Config 和 Discovery Listener 都可能调用</td>
+      <td>启动完成后进入正常运行</td>
+    </tr>
+    <tr>
+      <td>正确修改一次可刷新的 Nacos 配置</td>
+      <td>会</td>
+      <td>回调成功并更新 <code class="language-plaintext highlighter-rouge">lastCallMd5</code>，不再重试</td>
+    </tr>
+    <tr>
+      <td>错误配置导致绑定异常</td>
+      <td>会</td>
+      <td><code class="language-plaintext highlighter-rouge">lastCallMd5</code> 未更新，持续重试并重复创建</td>
+    </tr>
+    <tr>
+      <td>只在现有环境中重绑定属性、不重跑 Bootstrap</td>
+      <td>通常不会</td>
+      <td>不触发 Nacos 日志初始化</td>
+    </tr>
+    <tr>
+      <td>显式调用 <code class="language-plaintext highlighter-rouge">NacosLogging.loadConfiguration()</code></td>
+      <td>会</td>
+      <td>Nacos Client 2.0.4 创建新上下文</td>
+    </tr>
+  </tbody>
+</table>
+
+<p>因此，本文对“正确配置刷新”的最终结论是：<strong>正确配置不是不创建
+<code class="language-plaintext highlighter-rouge">LoggerContext</code>，而是只产生有限的成功刷新；错误配置则让相同创建路径无限重复。</strong></p>
+
+<h2 id="核心-bugnacos-client-204-泄漏-logback-上下文资源">核心 Bug：Nacos Client 2.0.4 泄漏 Logback 上下文资源</h2>
+
+<p>由于故障进程终止前没有保存成功的完整线程栈，无法百分之百还原 7000 个线程的具体名称。但这不影响对客户端代码本身的判断：<code class="language-plaintext highlighter-rouge">nacos-client 2.0.4</code> 确实存在重复创建 <code class="language-plaintext highlighter-rouge">LoggerContext</code> 且不释放旧上下文的资源生命周期 Bug。需要保持谨慎的是“事故中的 7000 个线程是否全部由它创建”，而不是“这段实现是否存在缺陷”。</p>
+
+<h3 id="这算不算-nacos-的-bug">这算不算 Nacos 的 Bug</h3>
+
+<p>算，但需要准确表述为：<strong>Nacos Client 2.0.4 的 Logback 集成 Bug</strong>。</p>
+
+<p>它不是 Nacos 服务端 Bug，因为数据库审计和服务端记录都表明配置没有被每 5 秒重复发布；它也不是 Logback 因为日志量大而自然产生的现象，因为反复创建上下文的调用发生在 Nacos Client 自己的 <code class="language-plaintext highlighter-rouge">LogbackNacosLogging</code> 中。Dinger 的版本不兼容提供了高频触发条件，但一个配置监听器持续失败，不应该使底层客户端无限累积日志上下文和线程资源。</p>
+
+<p>因此，这次事故的准确表述不是：</p>
+
+<div class="language-text highlighter-rouge"><div class="highlight"><pre class="highlight"><code><table class="rouge-table"><tbody><tr><td class="rouge-gutter gl"><pre class="lineno">1
+</pre></td><td class="rouge-code"><pre>Dinger 配错了，所以创建了 7000 个线程
+</pre></td></tr></tbody></table></code></pre></div></div>
+
+<p>而是：</p>
+
+<div class="language-text highlighter-rouge"><div class="highlight"><pre class="highlight"><code><table class="rouge-table"><tbody><tr><td class="rouge-gutter gl"><pre class="lineno">1
+2
+3
+</pre></td><td class="rouge-code"><pre>Dinger 配置与旧运行包不兼容，引发持续刷新
+  + Nacos Client 2.0.4 存在 LoggerContext 生命周期 Bug
+  = 刷新错误被放大成宿主机 PID 耗尽
+</pre></td></tr></tbody></table></code></pre></div></div>
+
+<p>Logback 确实是日志框架，但“Logback 线程”并不等于“业务打印日志时创建的线程”。普通同步日志通常由业务线程直接执行；Logback 自身仍可能因为配置扫描、异步输出、日志滚动和清理任务而使用后台线程。</p>
+
+<p><code class="language-plaintext highlighter-rouge">LoggerContext</code> 是 Logback 的运行上下文，负责管理 Logger、Appender、滚动策略、配置监听和相关调度资源。正常情况下，一个应用通常复用同一个上下文，而不是在每次配置刷新时重新创建。</p>
+
+<p>对 Nacos Client 2.0.4 的源码检查发现，<code class="language-plaintext highlighter-rouge">LogbackNacosLogging.loadConfiguration()</code> 每次执行都会直接创建一个新的上下文：</p>
+
+<div class="language-java highlighter-rouge"><div class="highlight"><pre class="highlight"><code><table class="rouge-table"><tbody><tr><td class="rouge-gutter gl"><pre class="lineno">1
+</pre></td><td class="rouge-code"><pre><span class="n">loggerContext</span> <span class="o">=</span> <span class="k">new</span> <span class="nc">LoggerContext</span><span class="o">();</span>
+</pre></td></tr></tbody></table></code></pre></div></div>
+
+<p>同时，该版本内置的 <code class="language-plaintext highlighter-rouge">nacos-logback.xml</code> 开启了配置扫描：</p>
+
+<div class="language-xml highlighter-rouge"><div class="highlight"><pre class="highlight"><code><table class="rouge-table"><tbody><tr><td class="rouge-gutter gl"><pre class="lineno">1
+</pre></td><td class="rouge-code"><pre><span class="nt">&lt;configuration</span> <span class="na">scan=</span><span class="s">"true"</span> <span class="na">scanPeriod=</span><span class="s">"30 seconds"</span><span class="nt">&gt;</span>
+</pre></td></tr></tbody></table></code></pre></div></div>
+
+<p>问题不在于调用了一次 <code class="language-plaintext highlighter-rouge">new LoggerContext()</code>，而在于它的生命周期没有闭环：</p>
+
+<ol>
+  <li><code class="language-plaintext highlighter-rouge">loggerContext</code> 是静态字段，每次加载都会被新对象覆盖；</li>
+  <li>覆盖前没有调用旧上下文的 <code class="language-plaintext highlighter-rouge">stop()</code>；</li>
+  <li>每个新上下文又会根据 <code class="language-plaintext highlighter-rouge">scan="true"</code> 注册配置扫描任务；</li>
+  <li>旧上下文持有的调度器和扫描任务没有随静态字段覆盖而自动停止；</li>
+  <li>只要外部事件反复调用日志初始化，后台资源就会持续累积。</li>
+</ol>
+
+<p>从资源管理角度看，这就是明确的客户端 Bug：<strong>创建了拥有后台资源的对象，却既不复用，也不在替换时销毁。</strong></p>
+
+<p>在本次 Legacy Bootstrap 版本组合中，Spring Cloud 刷新环境时会创建临时
+<code class="language-plaintext highlighter-rouge">SpringApplication</code> 并再次触发环境准备事件。即使配置正确，本轮刷新也可能再次初始化
+Nacos 日志系统；如果 Dinger 配置绑定持续失败、Nacos 每隔约 5 秒重新执行刷新回调，
+日志初始化路径就会被无限重复。这不是“日志打印得太多”，而是“日志子系统被反复初始化”
+触发了 Nacos Client 2.0.4 的资源泄漏路径。</p>
+
+<p>这个问题的核心修复并不是到 2.2.0 才出现。Nacos Client <strong>2.1.0</strong> 已经合入官方 Commit <a href="https://github.com/alibaba/nacos/commit/98d1221">98d1221</a>，对这部分实现作了关键调整；2.1.1 又补上了监听器去重：</p>
+
+<table>
+  <thead>
+    <tr>
+      <th>行为</th>
+      <th>Nacos Client 2.0.4</th>
+      <th>Nacos Client 2.1.0</th>
+      <th>Nacos Client 2.1.1 及以后</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><code class="language-plaintext highlighter-rouge">LoggerContext</code> 来源</td>
+      <td>每次加载时 <code class="language-plaintext highlighter-rouge">new LoggerContext()</code></td>
+      <td>从 <code class="language-plaintext highlighter-rouge">StaticLoggerBinder</code> 取得并复用应用上下文</td>
+      <td>同 2.1.0</td>
+    </tr>
+    <tr>
+      <td><code class="language-plaintext highlighter-rouge">nacos-logback.xml</code> 配置扫描</td>
+      <td><code class="language-plaintext highlighter-rouge">scan="true"</code></td>
+      <td><code class="language-plaintext highlighter-rouge">scan="false"</code></td>
+      <td><code class="language-plaintext highlighter-rouge">scan="false"</code></td>
+    </tr>
+    <tr>
+      <td>Listener 重复注册防护</td>
+      <td>无</td>
+      <td>尚未去重</td>
+      <td>检查 <code class="language-plaintext highlighter-rouge">NacosLoggerContextListener</code> 是否已经存在</td>
+    </tr>
+  </tbody>
+</table>
+
+<h3 id="新旧版本代码执行流程对比">新旧版本代码执行流程对比</h3>
+
+<p>下面两张图中的刷新前半段没有因为升级 Nacos Client 而消失。Nacos 配置变化仍由 Spring
+Cloud Alibaba 发布 <code class="language-plaintext highlighter-rouge">RefreshEvent</code>，继续使用 Legacy Bootstrap 时仍会创建临时
+<code class="language-plaintext highlighter-rouge">SpringApplication</code> 并触发环境准备事件。变化发生在
+<code class="language-plaintext highlighter-rouge">LogbackNacosLogging.loadConfiguration()</code> 内部。</p>
+
+<h4 id="nacos-client-204每次重试新建并遗留上下文">Nacos Client 2.0.4：每次重试新建并遗留上下文</h4>
+
+<pre><code class="language-mermaid">flowchart TD
+    A[Nacos 配置内容发生变化] --&gt; B[CacheData 比较配置 MD5 与 lastCallMd5]
+    B --&gt; C[调用 receiveConfigInfo]
+    C --&gt; D[NacosContextRefresher 发布 RefreshEvent]
+    D --&gt; E[LegacyContextRefresher 创建临时 SpringApplication]
+    E --&gt; F[触发 ApplicationEnvironmentPreparedEvent]
+    F --&gt; G1[Config NacosLoggingListener]
+    F --&gt; G2[Discovery NacosLoggingListener]
+    G1 --&gt; H[NacosLogging.loadConfiguration]
+    G2 --&gt; H
+    H --&gt; I[LogbackNacosLogging 2.0.4]
+    I --&gt; J[new LoggerContext]
+    J --&gt; K[加载 nacos-logback.xml: scan=true]
+    K --&gt; L[创建配置扫描任务和 logback 后台线程]
+    L --&gt; M[继续属性更新与配置绑定]
+    M --&gt;|成功| N[lastCallMd5 更新为当前 MD5]
+    N --&gt; O[MD5 一致，停止通知]
+    M --&gt;|抛出异常| P[lastCallMd5 保持旧值]
+    P --&gt; Q[MD5 仍不一致，约 5 秒后再次通知]
+    Q --&gt; C
+    J -. 静态字段被新对象覆盖，旧上下文未 stop .-&gt; R[旧扫描任务和线程继续存活]
+</code></pre>
+
+<p>在错误配置路径中，每次循环都会经过 <code class="language-plaintext highlighter-rouge">new LoggerContext()</code>；静态字段覆盖旧对象并不等于
+停止旧上下文，周期性扫描任务仍持有旧调度器和上下文，因此线程随重试次数持续累积。</p>
+
+<h4 id="nacos-client-21x仍然重试但复用应用上下文">Nacos Client 2.1.x：仍然重试，但复用应用上下文</h4>
+
+<pre><code class="language-mermaid">flowchart TD
+    A[Nacos 配置内容发生变化] --&gt; B[CacheData 比较配置 MD5 与 lastCallMd5]
+    B --&gt; C[调用 receiveConfigInfo]
+    C --&gt; D[NacosContextRefresher 发布 RefreshEvent]
+    D --&gt; E[LegacyContextRefresher 创建临时 SpringApplication]
+    E --&gt; F[触发 ApplicationEnvironmentPreparedEvent]
+    F --&gt; G1[Config NacosLoggingListener]
+    F --&gt; G2[Discovery NacosLoggingListener]
+    G1 --&gt; H[NacosLogging.loadConfiguration]
+    G2 --&gt; H
+    H --&gt; I[LogbackNacosLogging 2.1.x]
+    I --&gt; J[StaticLoggerBinder.getSingleton.getLoggerFactory]
+    J --&gt; K[取得应用已有的全局 LoggerContext]
+    K --&gt; L[加载 nacos-logback.xml: scan=false]
+    L --&gt; M[不为 Nacos 配置创建周期扫描任务]
+    M --&gt; N[继续属性更新与配置绑定]
+    N --&gt;|成功| O[lastCallMd5 更新为当前 MD5]
+    O --&gt; P[MD5 一致，停止通知]
+    N --&gt;|抛出异常| Q[lastCallMd5 保持旧值]
+    Q --&gt; R[MD5 仍不一致，约 5 秒后再次通知]
+    R --&gt; C
+    R -. 下次仍取得同一个 LoggerContext .-&gt; K
+</code></pre>
+
+<p>因此，Nacos Client 2.1.x 没有取消错误配置的通知重试，也没有取消 Legacy Bootstrap 的
+环境刷新。它解决的是每次调用 Nacos 日志加载时的资源放大：不再创建私有
+<code class="language-plaintext highlighter-rouge">LoggerContext</code>，并通过 <code class="language-plaintext highlighter-rouge">scan="false"</code> 避免为 Nacos 日志配置创建周期扫描线程。</p>
+
+<p>这里的“复用”指复用应用全局 <code class="language-plaintext highlighter-rouge">LoggerContext</code>，而不是简单复用某几个既有线程。2.1.1 又在
+2.1.0 的基础上增加 <code class="language-plaintext highlighter-rouge">NacosLoggerContextListener</code> 去重，避免相同监听器被重复添加。</p>
+
+<p>因此，若只问本次 <code class="language-plaintext highlighter-rouge">logback-*</code> 扫描线程持续累积的核心漏洞，<strong>最早可确认修复版本是 Nacos Client 2.1.0</strong>：它不再为每次加载创建一套私有 <code class="language-plaintext highlighter-rouge">LoggerContext</code>，并关闭了 Nacos 自身日志配置的扫描。官方 2.1.0 Release Notes 也把 PR #8229 列在 BugFix 中。</p>
+
+<p>但 2.1.0 的 <code class="language-plaintext highlighter-rouge">addListener()</code> 仍会直接注册监听器，没有判断是否已经注册。官方随后通过 <a href="https://github.com/alibaba/nacos/pull/8454">PR #8454</a> / <a href="https://github.com/alibaba/nacos/commit/e909483">Commit e909483</a> 解决“重复添加 Logback listener”的问题，该修改进入 2.1.1。因此更准确的版本结论是：</p>
+
+<ul>
+  <li>2.1.0：已修复本次线程爆炸最关键的 <code class="language-plaintext highlighter-rouge">LoggerContext</code> 与 <code class="language-plaintext highlighter-rouge">scan</code> 问题；</li>
+  <li>2.1.1：在 2.1.0 基础上补齐 Listener 去重，更完整；</li>
+  <li>2.2.0：包含上述两项修改，但不是该核心修复首次出现的版本。</li>
+</ul>
+
+<p>这组源码差异也从另一个角度证明，2.0.4 的实现不是正常、必要的设计。需要注意，这些修复解决的是 <strong>Nacos Logback 初始化对线程的放大问题</strong>，并不意味着 2.1.0 会停止错误配置导致的刷新失败或回调重试。</p>
+
+<h3 id="与本次事故高度一致的-nacos-官方-issue">与本次事故高度一致的 Nacos 官方 Issue</h3>
+
+<p>Nacos 官方仓库 Issue <a href="https://github.com/alibaba/nacos/issues/10385">#10385：NacosLogging issue cause too many logback-* threads</a> 与本次事故讨论的是同一个问题。</p>
+
+<p>该 Issue 描述的现象和原因包括：</p>
+
+<ul>
+  <li>同时引入 <code class="language-plaintext highlighter-rouge">spring-cloud-starter-alibaba-nacos-config</code> 与 <code class="language-plaintext highlighter-rouge">spring-cloud-starter-alibaba-nacos-discovery</code>；</li>
+  <li>两个 Starter 都会调用 <code class="language-plaintext highlighter-rouge">NacosLogging.loadConfiguration()</code>；</li>
+  <li><code class="language-plaintext highlighter-rouge">nacos-logback.xml</code> 配置了 <code class="language-plaintext highlighter-rouge">scan="true"</code> 和 <code class="language-plaintext highlighter-rouge">scanPeriod="30 seconds"</code>；</li>
+  <li>每次加载都会为 Logback 配置扫描创建调度线程池；</li>
+  <li>最终出现过多 <code class="language-plaintext highlighter-rouge">logback-*</code> 线程。</li>
+</ul>
+
+<p>Issue 中填写的版本是 Spring Cloud Alibaba <code class="language-plaintext highlighter-rouge">2021.0.4.0</code>。根据官方版本矩阵，该组合依赖的正是 Nacos Client 2.0.4，与本次生产环境完全一致。</p>
+
+<p>Nacos 维护者在 Issue 中给出的处理意见也非常直接：</p>
+
+<ol>
+  <li><a href="https://github.com/alibaba/nacos/issues/10385#issuecomment-1524433010">第一次回复</a>：“升级新版本客户端，scan 的配置已经被移除了”；同时说明多次调用 <code class="language-plaintext highlighter-rouge">loadConfiguration()</code> 属于 Spring 侧机制。</li>
+  <li>当提交者建议判断上下文非空或调用 <code class="language-plaintext highlighter-rouge">loggerContext.stop()</code> 时，维护者在<a href="https://github.com/alibaba/nacos/issues/10385#issuecomment-1537658162">后续回复</a>中说明不能随意 <code class="language-plaintext highlighter-rouge">stop()</code>，否则会移除应用自身日志配置；并表示移除 <code class="language-plaintext highlighter-rouge">scan</code> 后这个问题应该已经不存在。</li>
+  <li>最终维护者以“新版本已经解决问题”为由<a href="https://github.com/alibaba/nacos/issues/10385#issuecomment-1547107134">关闭 Issue</a>。</li>
+</ol>
+
+<p>该 Issue 最后被标记为 <code class="language-plaintext highlighter-rouge">status/invalid</code>、以 <code class="language-plaintext highlighter-rouge">not planned</code> 状态关闭。官方没有对这个标签作进一步解释；但从关闭前“新版本已经解决问题”的回复看，更合理的理解是旧版本问题已通过新客户端移除 <code class="language-plaintext highlighter-rouge">scan</code> 规避，因此没有再为旧版本安排修复，而不是维护者否认重复创建 Logback 线程的现象。</p>
+
+<p>官方 Commit <a href="https://github.com/alibaba/nacos/commit/98d1221">98d1221</a> 与维护者回复一致：它把 Nacos 日志配置从 <code class="language-plaintext highlighter-rouge">scan="true"</code> 改为 <code class="language-plaintext highlighter-rouge">scan="false"</code>，并将私有 <code class="language-plaintext highlighter-rouge">LoggerContext</code> 改为复用应用现有上下文。后续 Commit <a href="https://github.com/alibaba/nacos/commit/e909483">e909483</a> 又增加了 Logback listener 去重判断。</p>
+
+<p>因此可以确认：<strong>Nacos 官方仓库已经记录过同版本、同依赖组合、同一初始化机制导致过多 <code class="language-plaintext highlighter-rouge">logback-*</code> 线程的问题，并明确建议通过升级客户端解决。</strong>本次事故达到 7000 多线程的规模，则是 Dinger 配置绑定失败导致刷新长期重试后形成的更严重表现。</p>
+
+<p>不过这不代表错误配置已经安全：配置监听回调失败后仍可能再次被通知。升级 Nacos Client 可以修复本次事故中的线程放大 Bug，但不能替代 Dinger 配置兼容、发布顺序控制和刷新失败监控。</p>
+
+<p>现场证据包括：</p>
+
+<ul>
+  <li>首批 native thread 异常出现在 <code class="language-plaintext highlighter-rouge">NacosLogging</code> 加载 Logback 配置时；</li>
+  <li>四个服务都在固定的 5 秒刷新循环中；</li>
+  <li>线程数随着运行时间增长，重启后立即恢复；</li>
+  <li>正常运行时各服务的业务线程池均未突破配置上限。</li>
+</ul>
+
+<p>最终应把原因分成两层：</p>
+
+<ul>
+  <li><strong>触发条件：</strong>旧版 Dinger 无法绑定 ByteTalk 配置，导致 Nacos 刷新回调持续失败；</li>
+  <li><strong>资源耗尽根因：</strong>Nacos Client 2.0.4 重复创建且不停止旧 <code class="language-plaintext highlighter-rouge">LoggerContext</code>，把持续刷新放大为线程资源泄漏。</li>
+</ul>
+
+<p>如果只有第一层，应用应该表现为周期性报错，而不应该无上限地创建线程直至拖垮宿主机。正是第二层 Bug 让一个配置兼容问题升级成了系统级故障。</p>
+
+<h2 id="为什么重新构建发布后恢复正常">为什么重新构建发布后恢复正常</h2>
+
+<p>重新构建并发布四个服务后，容器内实际依赖统一为：</p>
+
+<div class="language-text highlighter-rouge"><div class="highlight"><pre class="highlight"><code><table class="rouge-table"><tbody><tr><td class="rouge-gutter gl"><pre class="lineno">1
+2
+3
+4
+5
+6
+</pre></td><td class="rouge-code"><pre>dinger-spring-boot-starter-2.1.0.jar
+nacos-client-2.0.4.jar
+spring-cloud-context-3.1.4.jar
+spring-cloud-starter-alibaba-nacos-config-2021.0.4.0.jar
+logback-classic-1.2.11.jar
+logback-core-1.2.11.jar
+</pre></td></tr></tbody></table></code></pre></div></div>
+
+<p>Dinger 2.1.0 能够识别 ByteTalk 配置，刷新回调不再失败，5 秒重试循环消失，线程数也稳定在正常区间。</p>
+
+<p>这也最终排除了以下方向：</p>
+
+<ul>
+  <li>外部攻击；</li>
+  <li>Java 堆内存不足；</li>
+  <li>全局 <code class="language-plaintext highlighter-rouge">@Async</code> 配置错误；</li>
+  <li>Dinger 默认线程池无界；</li>
+  <li>Nacos 服务端每 5 秒发布配置。</li>
+</ul>
+
+<h2 id="修复措施">修复措施</h2>
+
+<p>本次采取的直接修复措施是：</p>
+
+<ol>
+  <li>重新构建并发布四个异常服务；</li>
+  <li>确认所有容器均携带 Dinger 2.1.0；</li>
+  <li>重启服务，清理已经累积的线程和失效刷新状态；</li>
+  <li>持续观察容器 PIDS、内存、CPU 和日志；</li>
+  <li>确认不再出现 Dinger 配置绑定异常和 native thread 异常。</li>
+</ol>
+
+<h2 id="后续改进">后续改进</h2>
+
+<h3 id="1-依赖升级必须先于新配置发布">1. 依赖升级必须先于新配置发布</h3>
+
+<p>当新配置项依赖新版本代码才能识别时，正确发布顺序应为：</p>
+
+<div class="language-text highlighter-rouge"><div class="highlight"><pre class="highlight"><code><table class="rouge-table"><tbody><tr><td class="rouge-gutter gl"><pre class="lineno">1
+2
+3
+4
+</pre></td><td class="rouge-code"><pre>先部署兼容新旧配置的代码
+  -&gt; 核验所有运行实例版本
+  -&gt; 再发布新配置
+  -&gt; 最后移除旧兼容逻辑
+</pre></td></tr></tbody></table></code></pre></div></div>
+
+<p>不能只确认源码或 Git 分支一致，必须确认容器内实际运行的 Jar 版本。</p>
+
+<p>可以使用以下命令核验 Spring Boot Fat Jar 中的依赖：</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><table class="rouge-table"><tbody><tr><td class="rouge-gutter gl"><pre class="lineno">1
+2
+3
+4
+</pre></td><td class="rouge-code"><pre>docker <span class="nb">exec </span>SERVICE sh <span class="nt">-c</span> <span class="s1">'
+  app=$(tr "\0" "\n" &lt; /proc/1/cmdline | grep -E "\.jar$" | head -1)
+  jar tf "$app" | grep "BOOT-INF/lib/dinger-spring-boot-starter"
+'</span>
+</pre></td></tr></tbody></table></code></pre></div></div>
+
+<h3 id="2-避免将局部功能依赖扩散到所有服务">2. 避免将局部功能依赖扩散到所有服务</h3>
+
+<p>本次飞书功能实际上主要由任务服务使用，但 Dinger 依赖位于公共模块中，导致所有依赖公共模块的服务都被动携带同一版本，并共同订阅 <code class="language-plaintext highlighter-rouge">dinger.yml</code>。</p>
+
+<p>更合理的做法是：</p>
+
+<ul>
+  <li>将 Dinger 封装到独立通知模块；</li>
+  <li>只有实际需要通知能力的服务才引入该模块；</li>
+  <li>按服务拆分 Nacos 配置，减少共享配置的爆炸半径。</li>
+</ul>
+
+<h3 id="3-成套升级-spring-cloud-alibaba-与-nacos-client">3. 成套升级 Spring Cloud Alibaba 与 Nacos Client</h3>
+
+<p>当前运行组合中的 Nacos Client 2.0.4 存在 Logback 上下文资源泄漏 Bug。建议在测试环境评估升级到包含 Nacos Client 2.2.0 的兼容依赖组合，而不是只在 Maven 中强行覆盖一个客户端版本。</p>
+
+<p>对于现有 Java 8、Spring Boot 2.6 技术栈，可优先评估官方版本矩阵中的以下组合：</p>
+
+<div class="language-text highlighter-rouge"><div class="highlight"><pre class="highlight"><code><table class="rouge-table"><tbody><tr><td class="rouge-gutter gl"><pre class="lineno">1
+2
+3
+4
+</pre></td><td class="rouge-code"><pre>Spring Boot 2.6.13
+Spring Cloud 2021.0.5
+Spring Cloud Alibaba 2021.0.6.0
+Nacos Client 2.2.0
+</pre></td></tr></tbody></table></code></pre></div></div>
+
+<p>升级前后应专门回归以下场景：</p>
+
+<ul>
+  <li>发布一份包含非法枚举值的 Nacos 配置；</li>
+  <li>连续观察配置回调频率、JVM live threads 和 Docker PIDS；</li>
+  <li>对比多次刷新前后的 <code class="language-plaintext highlighter-rouge">LoggerContext</code>、Logback 后台线程和线程总数；</li>
+  <li>确认回滚配置后，刷新循环和资源占用能够恢复。</li>
+</ul>
+
+<p>这项升级用于修复已知的 Nacos Client 线程放大 Bug；与此同时，运行版本仍必须识别已发布的配置，监听器失败必须可观测，配置发布也必须支持灰度和回滚。客户端修复与配置治理缺一不可。</p>
+
+<h3 id="4-为容器设置-pid-保险丝">4. 为容器设置 PID 保险丝</h3>
+
+<p>建议在 Docker Compose 中为 Java 容器设置合理的 PID 上限：</p>
+
+<div class="language-yaml highlighter-rouge"><div class="highlight"><pre class="highlight"><code><table class="rouge-table"><tbody><tr><td class="rouge-gutter gl"><pre class="lineno">1
+2
+3
+</pre></td><td class="rouge-code"><pre><span class="na">services</span><span class="pi">:</span>
+  <span class="na">zmu-web</span><span class="pi">:</span>
+    <span class="na">pids_limit</span><span class="pi">:</span> <span class="m">2000</span>
+</pre></td></tr></tbody></table></code></pre></div></div>
+
+<p>具体数值需要根据正常线程基线和峰值调整。PID 上限不能修复线程泄漏，但可以防止单个容器拖垮整台宿主机。</p>
+
+<h3 id="5-增加线程数监控和自动取证">5. 增加线程数监控和自动取证</h3>
+
+<p>本次事故从正常基线增长到单个 JVM 7000 多线程并非瞬时完成。如果只监控 CPU、堆内存和
+接口可用性，就会错过线程持续上涨这一更早的信号。线程告警不能只设置一个很高的绝对值，
+还必须监控<strong>短时间增长量和创建速率</strong>，这样才能在线程耗尽宿主机 PID 前介入。</p>
+
+<p>重启后的现场基线为：</p>
+
+<table>
+  <thead>
+    <tr>
+      <th>服务</th>
+      <th style="text-align: right">正常 Docker PIDS 基线</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><code class="language-plaintext highlighter-rouge">zmu-web</code></td>
+      <td style="text-align: right">231</td>
+    </tr>
+    <tr>
+      <td><code class="language-plaintext highlighter-rouge">zmu-admin</code></td>
+      <td style="text-align: right">366</td>
+    </tr>
+    <tr>
+      <td><code class="language-plaintext highlighter-rouge">emq-handler</code></td>
+      <td style="text-align: right">565</td>
+    </tr>
+    <tr>
+      <td><code class="language-plaintext highlighter-rouge">fishery-emq-handler</code></td>
+      <td style="text-align: right">173</td>
+    </tr>
+  </tbody>
+</table>
+
+<p>应先连续采集一到两周数据，根据各服务的 P95、P99 和业务峰值建立独立基线，避免对所有服务
+使用同一个固定阈值。至少监控以下指标：</p>
+
+<ul>
+  <li>Docker <code class="language-plaintext highlighter-rouge">PIDS</code>；</li>
+  <li>JVM 当前存活线程数 <code class="language-plaintext highlighter-rouge">jvm_threads_live_threads</code>；</li>
+  <li>JVM 峰值线程数 <code class="language-plaintext highlighter-rouge">jvm_threads_peak_threads</code>；</li>
+  <li>JVM 累计启动线程数 <code class="language-plaintext highlighter-rouge">jvm_threads_started_threads_total</code>；</li>
+  <li>5 分钟、10 分钟内的线程净增长量；</li>
+  <li>5 分钟内的新线程创建速率；</li>
+  <li>容器 PIDS 占 <code class="language-plaintext highlighter-rouge">pids_limit</code> 的比例；</li>
+  <li>宿主机已用 task 数占 <code class="language-plaintext highlighter-rouge">pid_max</code> 的比例；</li>
+  <li><code class="language-plaintext highlighter-rouge">unable to create new native thread</code>；</li>
+  <li>Nacos <code class="language-plaintext highlighter-rouge">[notify-error]</code>；</li>
+  <li><code class="language-plaintext highlighter-rouge">Failed to bind properties</code>、<code class="language-plaintext highlighter-rouge">No enum constant</code> 等配置绑定错误；</li>
+  <li>单位时间内的 Nacos 配置刷新次数和连续失败次数。</li>
+</ul>
+
+<p>其中“累计启动线程数”即使在线程创建后很快退出、当前存活数没有明显上涨，也能暴露高频
+线程抖动；“存活线程净增长”则能直接发现本次这种线程泄漏。两者需要同时观察。</p>
+
+<p>Prometheus/Micrometer 环境可以参考以下告警表达式，具体阈值应结合实际基线调整：</p>
+
+<pre><code class="language-promql"># 5 分钟内存活线程净增加超过 100
+delta(jvm_threads_live_threads[5m]) &gt; 100
+
+# 5 分钟内累计创建超过 300 个新线程
+increase(jvm_threads_started_threads_total[5m]) &gt; 300
+</code></pre>
+
+<p>建议采用分级告警，而不是等到 7000 线程才处理：</p>
+
+<table>
+  <thead>
+    <tr>
+      <th>级别</th>
+      <th>建议触发条件示例</th>
+      <th>处置</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>预警</td>
+      <td>5 分钟净增超过 100，或连续三个采样周期上涨</td>
+      <td>通知值班人员并自动保存一次线程栈</td>
+    </tr>
+    <tr>
+      <td>严重</td>
+      <td>当前线程超过该服务基线的 1.5 倍并持续 10 分钟</td>
+      <td>关联检查线程名称、Nacos 刷新与配置绑定异常</td>
+    </tr>
+    <tr>
+      <td>紧急</td>
+      <td>当前线程超过基线 2 倍、容器 PIDS 超过上限 70%，或宿主机 task 使用率超过 70%</td>
+      <td>限流或摘除实例，完成取证后重启异常服务</td>
+    </tr>
+  </tbody>
+</table>
+
+<p>上述倍数只是初始建议。例如 <code class="language-plaintext highlighter-rouge">emq-handler</code> 正常基线本来就高于其他服务，应该使用它自己的
+历史区间，而不是照搬 <code class="language-plaintext highlighter-rouge">zmu-web</code> 的绝对数值。</p>
+
+<p>除了 JVM 指标，还应建立关联告警：如果同一服务在短时间内同时出现“线程持续增长”、
+“Nacos 刷新频率异常”和“配置绑定失败”，应直接合并为高优先级事件。事故中的每 5 秒一次
+刷新约等于每分钟 12 次，而生产配置正常情况下不会持续以这个频率变化，这类异常应在几分钟
+内被发现。</p>
+
+<p>建议在线程增长预警第一次触发时自动保存以下证据，而不是等到 PIDS 接近耗尽后才执行：</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><table class="rouge-table"><tbody><tr><td class="rouge-gutter gl"><pre class="lineno">1
+2
+</pre></td><td class="rouge-code"><pre>jcmd 1 Thread.print
+jcmd 1 VM.native_memory summary
+</pre></td></tr></tbody></table></code></pre></div></div>
+
+<p>同时保存：</p>
+
+<ul>
+  <li><code class="language-plaintext highlighter-rouge">docker stats --no-stream</code> 输出；</li>
+  <li><code class="language-plaintext highlighter-rouge">/proc/1/status</code> 中的 <code class="language-plaintext highlighter-rouge">Threads</code>；</li>
+  <li>按线程名称聚合后的线程数量；</li>
+  <li>最近一段时间的 Nacos 刷新、<code class="language-plaintext highlighter-rouge">notify-error</code> 和配置绑定日志；</li>
+  <li>容器启动时间、镜像版本和实际 Jar 依赖版本。</li>
+</ul>
+
+<p>自动取证任务需要设置冷却时间和文件保留策略，例如同一实例 10 分钟内最多抓取一次，防止
+告警风暴反过来耗尽磁盘或继续增加系统压力。告警恢复条件也不能只是线程数暂时下降，应要求
+增长趋势停止、配置刷新恢复正常且相关异常不再出现。</p>
+
+<p>取证顺序应为：</p>
+
+<div class="language-text highlighter-rouge"><div class="highlight"><pre class="highlight"><code><table class="rouge-table"><tbody><tr><td class="rouge-gutter gl"><pre class="lineno">1
+2
+3
+</pre></td><td class="rouge-code"><pre>先抓线程栈和运行状态
+  -&gt; 再终止异常进程
+  -&gt; 最后恢复服务
+</pre></td></tr></tbody></table></code></pre></div></div>
+
+<h3 id="6-配置中心变更也要做兼容性检查">6. 配置中心变更也要做兼容性检查</h3>
+
+<p>Nacos 配置发布应纳入和代码发布相同的变更管理：</p>
+
+<ul>
+  <li>记录 DataId、修改人、来源 IP 和修改时间；</li>
+  <li>对枚举、新字段和结构变化做版本兼容检查；</li>
+  <li>高风险共享配置先灰度到单个实例；</li>
+  <li>准备可快速回滚的上一版本配置；</li>
+  <li>避免在所有服务共享的配置中直接加入仅新版本支持的字段。</li>
+</ul>
+
+<h3 id="7-严格保护日志和截图中的凭据">7. 严格保护日志和截图中的凭据</h3>
+
+<p>排查过程中，配置、请求头和截图可能包含 Nacos Token、机器人 Webhook、数据库密码等敏感信息。对外分享前必须脱敏；一旦泄露，应立即轮换，而不能只删除聊天记录或日志。</p>
+
+<h2 id="总结">总结</h2>
+
+<p>这次事故表面上是“Java 无法创建线程”，实际是配置兼容问题触发了 Nacos Client 2.0.4 的资源生命周期 Bug：</p>
+
+<div class="language-text highlighter-rouge"><div class="highlight"><pre class="highlight"><code><table class="rouge-table"><tbody><tr><td class="rouge-gutter gl"><pre class="lineno">1
+2
+3
+4
+5
+6
+7
+8
+9
+</pre></td><td class="rouge-code"><pre>Dinger 新版本增加 ByteTalk 能力
+  -&gt; 新配置提前进入共享 Nacos
+  -&gt; 旧版本服务无法绑定配置
+  -&gt; Nacos 客户端持续重试刷新
+  -&gt; Nacos Client 2.0.4 反复初始化 Logback 上下文并放大线程占用
+  -&gt; 线程资源不断累积
+  -&gt; 四个 JVM 各自达到 7000 多线程
+  -&gt; 宿主机 PID 耗尽
+  -&gt; Bash 和 SSH 同时失效
+</pre></td></tr></tbody></table></code></pre></div></div>
+
+<p>最重要的经验不是“把线程池调小”，而是：</p>
+
+<ol>
+  <li>当前使用的 Nacos Client 2.0.4 存在重复创建且不释放 <code class="language-plaintext highlighter-rouge">LoggerContext</code> 的客户端 Bug；</li>
+  <li>配置结构也是接口，必须考虑版本兼容；</li>
+  <li>判断线上版本必须以运行中的 Jar 为准；</li>
+  <li><code class="language-plaintext highlighter-rouge">unable to create new native thread</code> 不等于 Java 堆不足；</li>
+  <li>Docker PIDS 包含线程；</li>
+  <li>恢复服务前应尽可能保留线程栈；</li>
+  <li>Logback 线程增长不等于日志量过大，还要检查 <code class="language-plaintext highlighter-rouge">LoggerContext</code> 是否被反复创建；</li>
+  <li>升级 Nacos Client 可以修复已知放大路径，但不能代替配置兼容治理；</li>
+  <li>容器 PID 限制和线程监控是必要的最后防线。</li>
+  <li>在当前 Legacy Bootstrap 版本组合中，正确配置刷新也可能重新初始化 Nacos Logback；成功回调会更新 <code class="language-plaintext highlighter-rouge">lastCallMd5</code> 并停止通知，错误回调则因 MD5 未确认而持续重试。</li>
+  <li>线程告警既要看绝对数量，也要看 5 分钟内的净增长和创建速率，在线程耗尽 PID 前自动告警并保留现场证据。</li>
+</ol>
+
+<h2 id="参考源码">参考源码</h2>
+
+<ul>
+  <li><a href="https://github.com/alibaba/nacos/issues/10385">Nacos 官方 Issue #10385：NacosLogging 导致过多 logback-* 线程</a></li>
+  <li><a href="https://github.com/alibaba/nacos/issues/10385#issuecomment-1524433010">Nacos 维护者回复：升级客户端并移除 scan</a></li>
+  <li><a href="https://github.com/alibaba/nacos/issues/10385#issuecomment-1537658162">Nacos 维护者回复：移除 scan 后问题应该不存在</a></li>
+  <li><a href="https://github.com/alibaba/nacos/pull/8229">Nacos 官方 PR #8229：重写客户端 Logback 加载逻辑</a></li>
+  <li><a href="https://github.com/alibaba/nacos/commit/98d1221">Nacos 官方 Commit 98d1221：复用 LoggerContext 并关闭 scan</a></li>
+  <li><a href="https://github.com/alibaba/nacos/pull/8454">Nacos 官方 PR #8454：解决重复添加 Logback listener</a></li>
+  <li><a href="https://github.com/alibaba/nacos/commit/e909483">Nacos 官方 Commit e909483：增加 listener 去重判断</a></li>
+  <li><a href="https://github.com/alibaba/nacos/releases/tag/2.1.0">Nacos Client 2.1.0 Release Notes</a></li>
+  <li><a href="https://github.com/alibaba/nacos/releases/tag/2.1.1">Nacos Client 2.1.1 Release Notes</a></li>
+  <li><a href="https://github.com/alibaba/spring-cloud-alibaba/blob/2021.0.4.0/spring-cloud-alibaba-starters/spring-cloud-starter-alibaba-nacos-config/src/main/java/com/alibaba/cloud/nacos/refresh/NacosContextRefresher.java">Spring Cloud Alibaba 2021.0.4.0：NacosContextRefresher</a></li>
+  <li><a href="https://github.com/spring-cloud/spring-cloud-commons/blob/v3.1.4/spring-cloud-context/src/main/java/org/springframework/cloud/endpoint/event/RefreshEventListener.java">Spring Cloud Commons 3.1.4：RefreshEventListener</a></li>
+  <li><a href="https://github.com/spring-cloud/spring-cloud-commons/blob/v3.1.4/spring-cloud-context/src/main/java/org/springframework/cloud/context/refresh/LegacyContextRefresher.java">Spring Cloud Commons 3.1.4：LegacyContextRefresher</a></li>
+  <li><a href="https://github.com/spring-cloud/spring-cloud-commons/blob/v3.1.4/spring-cloud-context/src/main/java/org/springframework/cloud/bootstrap/BootstrapApplicationListener.java">Spring Cloud Commons 3.1.4：BootstrapApplicationListener</a></li>
+  <li><a href="https://github.com/alibaba/spring-cloud-alibaba/blob/2021.0.4.0/spring-cloud-alibaba-starters/spring-cloud-starter-alibaba-nacos-config/src/main/java/com/alibaba/cloud/nacos/logging/NacosLoggingListener.java">Spring Cloud Alibaba 2021.0.4.0：Nacos Config 日志监听器</a></li>
+  <li><a href="https://github.com/alibaba/spring-cloud-alibaba/blob/2021.0.4.0/spring-cloud-alibaba-starters/spring-cloud-starter-alibaba-nacos-discovery/src/main/java/com/alibaba/cloud/nacos/discovery/logging/NacosLoggingListener.java">Spring Cloud Alibaba 2021.0.4.0：Nacos Discovery 日志监听器</a></li>
+  <li><a href="https://github.com/alibaba/nacos/blob/2.0.4/client/src/main/java/com/alibaba/nacos/client/logging/logback/LogbackNacosLogging.java">Nacos Client 2.0.4：LogbackNacosLogging</a></li>
+  <li><a href="https://github.com/alibaba/nacos/blob/2.0.4/client/src/main/resources/nacos-logback.xml">Nacos Client 2.0.4：nacos-logback.xml</a></li>
+  <li><a href="https://github.com/alibaba/nacos/blob/2.1.0/client/src/main/java/com/alibaba/nacos/client/logging/logback/LogbackNacosLogging.java">Nacos Client 2.1.0：LogbackNacosLogging</a></li>
+  <li><a href="https://github.com/alibaba/nacos/blob/2.1.0/client/src/main/resources/nacos-logback.xml">Nacos Client 2.1.0：nacos-logback.xml</a></li>
+  <li><a href="https://github.com/alibaba/nacos/blob/2.1.1/client/src/main/java/com/alibaba/nacos/client/logging/logback/LogbackNacosLogging.java">Nacos Client 2.1.1：LogbackNacosLogging</a></li>
+  <li><a href="https://github.com/alibaba/nacos/blob/2.2.0/client/src/main/java/com/alibaba/nacos/client/logging/logback/LogbackNacosLogging.java">Nacos Client 2.2.0：LogbackNacosLogging</a></li>
+  <li><a href="https://github.com/alibaba/nacos/blob/2.2.0/client/src/main/resources/nacos-logback.xml">Nacos Client 2.2.0：nacos-logback.xml</a></li>
+  <li><a href="https://github.com/spring-cloud-alibaba-group/spring-cloud-alibaba-group.github.io/blob/main/src/content/docs/2021/en/overview/version-explain.md">Spring Cloud Alibaba 2021 版本依赖关系</a></li>
+</ul>
+
+
+                <hr style="visibility: hidden;">
+                <ul class="pager">
+
+
+                    
+                    <li class="next">
+                        <a href="/blog/2026/08/11/data-router-MQTT%E9%87%8D%E8%BF%9E%E9%A3%8E%E6%9A%B4%E4%BA%8B%E6%95%85%E5%A4%8D%E7%9B%98/" data-toggle="tooltip" data-placement="top" title="一次下游 IoT 故障如何拖垮 data-router：MQTT 重连风暴事故复盘">
+                        下一篇<br>
+                        <span>一次下游 IoT 故障如何拖垮 data-router：MQTT 重连风暴事故复盘</span>
+                        </a>
+                    </li>
+                    
+
+                    
+
+                </ul>
+                <hr style="visibility: hidden;">
+
+            </div>  
+
+    <!-- Side Catalog Container -->
+        
+            <div class="
+                col-lg-2 col-lg-offset-0
+                visible-lg-block
+                sidebar-container
+                catalog-container">
+                <div class="side-catalog">
+                    <hr class="hidden-sm hidden-xs">
+                    <h5>
+                        <a class="catalog-toggle" href="#">目录</a>
+                    </h5>
+                    <ul class="catalog-body"></ul>
+                </div>
+            </div>
+        
+
+    <!-- Sidebar Container -->
+            <div class="
+                col-lg-8 col-lg-offset-2
+                col-md-10 col-md-offset-1
+                sidebar-container">
+
+                <!-- Featured Tags -->
+                
+
+
+<section>
+    
+        <hr class="hidden-sm hidden-xs">
+    
+    <h5><a href="/archive/">归档</a></h5>
+    <div class="tags">
+        
+        
+        
+        </a>
+        
+        
+                <a data-sort="0099" 
+                    href="/archive/?tag=java"
+                    title="java"
+                    rel="10">java</a>
+        
+                <a data-sort="0060" 
+                    href="/archive/?tag=%E6%97%A5%E5%B8%B8%E8%AE%B0%E5%BD%95"
+                    title="日常记录"
+                    rel="49">日常记录</a>
+        
+                <a data-sort="0097" 
+                    href="/archive/?tag=MySQL"
+                    title="MySQL"
+                    rel="12">MySQL</a>
+        
+                <a data-sort="0101" 
+                    href="/archive/?tag=%E5%A4%9A%E7%BA%BF%E7%A8%8B"
+                    title="多线程"
+                    rel="8">多线程</a>
+        
+                <a data-sort="0102" 
+                    href="/archive/?tag=Spring"
+                    title="Spring"
+                    rel="7">Spring</a>
+        
+                <a data-sort="0105" 
+                    href="/archive/?tag=%E8%AE%BE%E8%AE%A1%E6%A8%A1%E5%BC%8F"
+                    title="设计模式"
+                    rel="4">设计模式</a>
+        
+                <a data-sort="0105" 
+                    href="/archive/?tag=Redis"
+                    title="Redis"
+                    rel="4">Redis</a>
+        
+                <a data-sort="0105" 
+                    href="/archive/?tag=SpringBoot"
+                    title="SpringBoot"
+                    rel="4">SpringBoot</a>
+        
+                <a data-sort="0105" 
+                    href="/archive/?tag=Zookeeper"
+                    title="Zookeeper"
+                    rel="4">Zookeeper</a>
+        
+                <a data-sort="0106" 
+                    href="/archive/?tag=%E5%BE%AE%E6%9C%8D%E5%8A%A1"
+                    title="微服务"
+                    rel="3">微服务</a>
+        
+                <a data-sort="0106" 
+                    href="/archive/?tag=%E7%AE%97%E6%B3%95"
+                    title="算法"
+                    rel="3">算法</a>
+        
+                <a data-sort="0106" 
+                    href="/archive/?tag=Docker"
+                    title="Docker"
+                    rel="3">Docker</a>
+        
+                <a data-sort="0107" 
+                    href="/archive/?tag=%E5%B7%A5%E4%BD%9C%E9%A1%B9%E7%9B%AE%E6%80%9D%E8%80%83"
+                    title="工作项目思考"
+                    rel="2">工作项目思考</a>
+        
+                <a data-sort="0107" 
+                    href="/archive/?tag=%E7%BA%BF%E4%B8%8A%E4%BA%8B%E6%95%85"
+                    title="线上事故"
+                    rel="2">线上事故</a>
+        
+                <a data-sort="0107" 
+                    href="/archive/?tag=ChatGPT"
+                    title="ChatGPT"
+                    rel="2">ChatGPT</a>
+        
+                <a data-sort="0107" 
+                    href="/archive/?tag=Java"
+                    title="Java"
+                    rel="2">Java</a>
+        
+                <a data-sort="0107" 
+                    href="/archive/?tag=MQTT"
+                    title="MQTT"
+                    rel="2">MQTT</a>
+        
+                <a data-sort="0107" 
+                    href="/archive/?tag=MyBatis"
+                    title="MyBatis"
+                    rel="2">MyBatis</a>
+        
+                <a data-sort="0107" 
+                    href="/archive/?tag=NIO"
+                    title="NIO"
+                    rel="2">NIO</a>
+        
+                <a data-sort="0107" 
+                    href="/archive/?tag=Netty"
+                    title="Netty"
+                    rel="2">Netty</a>
+        
+                <a data-sort="0107" 
+                    href="/archive/?tag=SpringCloud"
+                    title="SpringCloud"
+                    rel="2">SpringCloud</a>
+        
+                <a data-sort="0107" 
+                    href="/archive/?tag=SpringCloud-GateWay"
+                    title="SpringCloud-GateWay"
+                    rel="2">SpringCloud-GateWay</a>
+        
+                <a data-sort="0107" 
+                    href="/archive/?tag=k8s"
+                    title="k8s"
+                    rel="2">k8s
+    </div>
+</section>
+
+
+                <!-- Friends Blog -->
+<!--                -->
+            </div>
+        </div>
+    </div>
+</article>
+
+<!-- add support for mathjax by voleking-->
+
+
+
+<!-- Page-view counter: Busuanzi does not accept localhost or 127.0.0.1. -->
+<script src="https://cdn.busuanzi.cc/busuanzi/3.6.9/busuanzi.min.js" defer></script>
+
+
+
+
+
+<!-- async load function -->
+<script>
+    function async(u, c) {
+      var d = document, t = 'script',
+          o = d.createElement(t),
+          s = d.getElementsByTagName(t)[0];
+      o.src = u;
+      if (c) { o.addEventListener('load', function (e) { c(null, e); }, false); }
+      s.parentNode.insertBefore(o, s);
+    }
+</script>
+<!-- anchor-js, Doc:http://bryanbraun.github.io/anchorjs/ -->
+<script>
+    async("//cdnjs.cloudflare.com/ajax/libs/anchor-js/1.1.1/anchor.min.js",function(){
+        anchors.options = {
+          visible: 'always',
+          placement: 'right',
+          icon: '#'
+        };
+        anchors.add().remove('.intro-header h1').remove('.subheading').remove('.sidebar-container h5');
+    })
+</script>
+<style>
+    /* place left on bigger screen */
+    @media all and (min-width: 800px) {
+        .anchorjs-link{
+            position: absolute;
+            left: -0.75em;
+            font-size: 1.1em;
+            margin-top : -0.1em;
+        }
+    }
+</style>
+
+
+
+    <!-- Footer -->
+<footer>
+    <div class="container">
+        <div class="row">
+            <div class="col-lg-8 col-lg-offset-2 col-md-10 col-md-offset-1">
+                <!-- &lt;!&ndash; SNS Link &ndash;&gt;
+                
+
+
+<ul class="list-inline text-center">
+
+
+  
+
+</ul> -->
+
+                <p class="copyright text-muted">
+                    <!-- Copyright &copy; jamie Blog 2026
+                    <br> -->
+                    Copyright &copy; 2016–2026 jamie Blog<br>
+                    Powered by <a href="/about/">jamie</a>
+               </p>
+           </div>
+       </div>
+   </div>
+</footer>
+
+<!-- jQuery -->
+<script src="/js/jquery.min.js "></script>
+
+<!-- Bootstrap Core JavaScript -->
+<!-- Currently, only navbar scroll-down effect at desktop still depends on this -->
+<script src="/js/bootstrap.min.js "></script>
+
+<!-- Custom Theme JavaScript -->
+<script src="/js/hux-blog.min.js "></script>
+<script src="/js/blog-search.js"></script>
+
+
+<!-- Article image preview -->
+<script src="/js/post-image-preview.js"></script>
+
+
+<!-- Service Worker -->
+
+<script src="/js/snackbar.js "></script>
+<script src="/js/sw-registration.js "></script>
+
+
+
+<style>
+    .mermaid {
+        overflow-x: auto;
+        padding: 1rem 0;
+        border: 0;
+        background: transparent;
+        text-align: center;
+    }
+
+    .mermaid svg {
+        max-width: 100%;
+        height: auto;
+    }
+</style>
+<script type="module">
+    import mermaid from "https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.esm.min.mjs";
+
+    document.querySelectorAll("pre > code.language-mermaid").forEach((code) => {
+        const container = code.parentElement;
+        container.className = "mermaid";
+        container.textContent = code.textContent;
+    });
+
+    mermaid.initialize({
+        startOnLoad: false,
+        securityLevel: "strict",
+        theme: "default",
+        flowchart: {
+            htmlLabels: true,
+            useMaxWidth: true
+        }
+    });
+
+    await mermaid.run({ querySelector: ".mermaid" });
+</script>
+
+
+<!-- async load function -->
+<script>
+    function async(u, c) {
+      var d = document, t = 'script',
+          o = d.createElement(t),
+          s = d.getElementsByTagName(t)[0];
+      o.src = u;
+      if (c) { o.addEventListener('load', function (e) { c(null, e); }, false); }
+      s.parentNode.insertBefore(o, s);
+    }
+</script>
+
+<!--
+     Because of the native support for backtick-style fenced code blocks
+     right within the Markdown is landed in Github Pages,
+     From V1.6, There is no need for Highlight.js,
+     so Huxblog drops it officially.
+
+     - https://github.com/blog/2100-github-pages-now-faster-and-simpler-with-jekyll-3-0
+     - https://help.github.com/articles/creating-and-highlighting-code-blocks/
+     - https://github.com/jneen/rouge/wiki/list-of-supported-languages-and-lexers
+-->
+<!--
+    <script>
+        async("http://cdn.bootcss.com/highlight.js/8.6/highlight.min.js", function(){
+            hljs.initHighlightingOnLoad();
+        })
+    </script>
+    <link href="http://cdn.bootcss.com/highlight.js/8.6/styles/github.min.css" rel="stylesheet">
+-->
+
+
+
+
+
+<!--fastClick.js -->
+<!-- <script>
+    async("//cdnjs.cloudflare.com/ajax/libs/fastclick/1.0.6/fastclick.min.js", function(){
+        var $nav = document.querySelector("nav");
+        if($nav) FastClick.attach($nav);
+    })
+</script> -->
+
+
+<!-- Google Analytics -->
+
+<script>
+    // dynamic User by Hux
+    var _gaId = 'UA-49627206-1';
+    var _gaDomain = 'jamie.me';
+
+    // Originial
+    (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+    (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+    m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+    });
+    // (window,document,'script','//www.google-analytics.com/analytics.js','ga');
+
+    ga('create', _gaId, _gaDomain);
+    ga('send', 'pageview');
+</script>
+
+
+
+<!-- Baidu Tongji -->
+
+
+
+<!-- Side Catalog -->
+
+<script type="text/javascript">
+    function generateCatalog (selector) {
+
+        // interop with multilangual 
+        if ('' == 'true') {
+            _containerSelector = 'div.post-container.active'
+        } else {
+            _containerSelector = 'div.post-container'
+        }
+
+        // init
+        var P = $(_containerSelector),a,n,t,l,i,c;
+        a = P.find('h1,h2,h3,h4,h5,h6');
+
+        // clean
+        $(selector).html('')
+
+        // appending
+        a.each(function () {
+            n = $(this).prop('tagName').toLowerCase();
+            i = "#"+$(this).prop('id');
+            t = $(this).text();
+            c = $('<a href="'+i+'" rel="nofollow">'+t+'</a>');
+            l = $('<li class="'+n+'_nav"></li>').append(c);
+            $(selector).append(l);
+        });
+        return true;
+    }
+
+    generateCatalog(".catalog-body");
+
+    // toggle side catalog
+    $(".catalog-toggle").click((function(e){
+        e.preventDefault();
+        $('.side-catalog').toggleClass("fold")
+    }))
+
+    /*
+     * Doc: https://github.com/davist11/jQuery-One-Page-Nav
+     * Fork by Hux to support padding
+     */
+    async("/js/jquery.nav.js", function () {
+        $('.catalog-body').onePageNav({
+            currentClass: "active",
+            changeHash: !1,
+            easing: "swing",
+            filter: "",
+            scrollSpeed: 700,
+            scrollOffset: 0,
+            scrollThreshold: .2,
+            begin: null,
+            end: null,
+            scrollChange: null,
+            padding: 80
+        });
+    });
+</script>
+
+
+
+<!-- Multi-Lingual -->
+
+
+
+
+<!-- Image to hack wechat -->
+<!--<img src="/img/icon_wechat.png" width="0" height="0" />-->
+<!-- Migrate from head to bottom, no longer block render and still work -->
+
+</body>
+
+</html>

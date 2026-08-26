@@ -1,0 +1,104 @@
+/*
+ * Remove the rectangular focus ring left behind after mouse or touch taps.
+ * Keyboard navigation still gets a subtle underline through :focus-visible.
+ */
+a:focus {
+  outline: none;
+}
+
+@supports selector(:focus-visible) {
+  a:focus-visible {
+    outline: none;
+    text-decoration-line: underline !important;
+    text-decoration-color: rgba(0, 133, 161, 0.75) !important;
+    text-decoration-thickness: 2px !important;
+    text-underline-offset: 4px;
+  }
+}
+
+/* Keep the post view count visually consistent with the existing header meta. */
+.post-heading .post-meta-line {
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.4em;
+}
+
+.post-heading .post-meta-separator {
+  opacity: 0.72;
+}
+
+.post-heading .post-view-count {
+  white-space: nowrap;
+}
+
+/* Article image preview */
+.post-container img[data-image-preview] {
+  cursor: zoom-in;
+}
+
+.image-preview-overlay[hidden] {
+  display: none;
+}
+
+.image-preview-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 2000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 56px 24px 32px;
+  background: rgba(10, 13, 16, 0.9);
+  cursor: zoom-out;
+}
+
+.image-preview-overlay img {
+  display: block;
+  max-width: min(94vw, 1600px);
+  max-height: calc(100vh - 88px);
+  width: auto;
+  height: auto;
+  margin: 0;
+  object-fit: contain;
+  border-radius: 3px;
+  box-shadow: 0 16px 60px rgba(0, 0, 0, 0.45);
+  cursor: default;
+}
+
+.image-preview-close {
+  position: fixed;
+  top: 14px;
+  right: 18px;
+  width: 42px;
+  height: 42px;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  color: #ffffff;
+  background: rgba(255, 255, 255, 0.12);
+  font: 300 32px/40px Arial, sans-serif;
+  text-align: center;
+  cursor: pointer;
+}
+
+.image-preview-close:hover,
+.image-preview-close:focus-visible {
+  background: rgba(255, 255, 255, 0.24);
+  outline: none;
+}
+
+body.image-preview-open {
+  overflow: hidden;
+}
+
+@media only screen and (max-width: 767px) {
+  .image-preview-overlay {
+    padding: 52px 12px 20px;
+  }
+
+  .image-preview-overlay img {
+    max-width: calc(100vw - 24px);
+    max-height: calc(100vh - 72px);
+  }
+}

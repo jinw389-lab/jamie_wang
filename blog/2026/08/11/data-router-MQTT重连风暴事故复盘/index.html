@@ -1,0 +1,1325 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="baidu-site-verification" content="code-8XHgqNvUKa" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+    <meta name="description" content="关于后端程序设计 | 这里是 jamie 的个人博客。">
+    <meta name="keywords"  content="jamie, java, spring, jamie的博客, 博客, 个人网站, 互联网, 后端, jamie's blog">
+    <meta name="theme-color" content="#000000">
+
+    <!-- Apply the saved theme before rendering to avoid a color flash. -->
+    <script>
+        (function () {
+            var theme = null;
+            try {
+                theme = localStorage.getItem('jamie-blog-theme');
+            } catch (error) {}
+
+            if (['classic', 'eye', 'dark'].indexOf(theme) === -1) {
+                theme = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches
+                    ? 'dark'
+                    : 'classic';
+            }
+
+            document.documentElement.setAttribute('data-theme', theme);
+        })();
+    </script>
+    
+    <!-- Open Graph -->
+    <meta property="og:title" content="一次下游 IoT 故障如何拖垮 data-router：MQTT 重连风暴事故复盘 - jamie的博客 | jamie Blog">
+    
+    <meta property="og:type" content="article">
+    <meta property="og:description" content="
+  MQTT 重连风暴与 Native Thread OOM 的完整复盘
+
+
+">
+    
+    <meta property="article:published_time" content="2026-08-11T00:00:00Z">
+    
+    
+    
+    <meta property="article:tag" content="工作项目思考">
+    
+    <meta property="article:tag" content="MQTT">
+    
+    <meta property="article:tag" content="Java">
+    
+    <meta property="article:tag" content="线上事故">
+    
+    
+    <meta property="og:image" content="https://jinw389-lab.github.io/images/wexin.png">
+    <meta property="og:url" content="https://jinw389-lab.github.io/blog/2026/08/11/data-router-MQTT%E9%87%8D%E8%BF%9E%E9%A3%8E%E6%9A%B4%E4%BA%8B%E6%95%85%E5%A4%8D%E7%9B%98/">
+    <meta property="og:site_name" content="jamie的博客 | jamie Blog">
+    
+    <title>一次下游 IoT 故障如何拖垮 data-router：MQTT 重连风暴事故复盘 - jamie的博客 | jamie Blog</title>
+
+    <!-- Web App Manifest -->
+    <link rel="manifest" href="/pwa/manifest.json">
+
+    <!-- Favicon -->
+    <link rel="shortcut icon" href="/img/logo.jpg">
+    
+    <!-- Canonical URL -->
+    <link rel="canonical" href="https://jinw389-lab.github.io/blog/2026/08/11/data-router-MQTT%E9%87%8D%E8%BF%9E%E9%A3%8E%E6%9A%B4%E4%BA%8B%E6%95%85%E5%A4%8D%E7%9B%98/">
+
+    <!-- Bootstrap Core CSS -->
+    <link rel="stylesheet" href="/css/bootstrap.min.css">
+
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="/css/hux-blog.min.css">
+    <link rel="stylesheet" href="/css/interaction.css">
+    <link rel="stylesheet" href="/css/themes.css">
+    <link rel="stylesheet" href="/css/search.css">
+    <script src="/js/theme-switcher.js" defer></script>
+
+    <!-- Custom Fonts -->
+    <!-- <link href="http://maxcdn.bootstrapcdn.com/font-awesome/4.3.0/css/font-awesome.min.css" rel="stylesheet" type="text/css"> -->
+    <!-- Hux change font-awesome CDN to qiniu -->
+    <!-- <link href="//cdnjs.cloudflare.com/ajax/libs/font-awesome/4.6.3/css/font-awesome.min.css" rel="stylesheet" type="text/css"> -->
+
+
+    <!-- HTML5 Shim and Respond.js IE8 support of HTML5 elements and media queries -->
+    <!-- WARNING: Respond.js doesn't work if you view the page via file:// -->
+    <!--[if lt IE 9]>
+        <script src="https://oss.maxcdn.com/libs/html5shiv/3.7.0/html5shiv.js"></script>
+        <script src="https://oss.maxcdn.com/libs/respond.js/1.4.2/respond.min.js"></script>
+    <![endif]-->
+
+    <!-- ga & ba script hoook -->
+    <script></script>
+</head>
+
+
+<!-- hack iOS CSS :active style -->
+<body ontouchstart="">
+
+    <!-- Navigation -->
+
+<nav class="navbar navbar-default navbar-custom navbar-fixed-top">
+
+    <div class="container-fluid">
+        <!-- Brand and toggle get grouped for better mobile display -->
+        <div class="navbar-header page-scroll">
+            <button type="button" class="navbar-toggle">
+                <span class="sr-only">Toggle navigation</span>
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+            </button>
+            <a class="navbar-brand" href="/">jamie Blog</a>
+        </div>
+
+        <!-- Collect the nav links, forms, and other content for toggling -->
+        <div id="huxblog_navbar">
+            <div class="navbar-collapse">
+                <ul class="nav navbar-nav navbar-right">
+                    <li>
+                        <a href="/">首页</a>
+                    </li>
+                    
+                    
+                    
+                    
+                    <li>
+                        
+                            <a href="/about/">关于</a>
+                        
+                    </li>
+                    
+                    
+                    
+                    <li>
+                        
+                        <a href="/archive/">归档</a>
+                        
+                    </li>
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                </ul>
+            </div>
+        </div>
+        <!-- /.navbar-collapse -->
+    </div>
+    <!-- /.container -->
+</nav>
+<div class="floating-tools edge-right is-collapsed" data-floating-tools>
+    <button class="floating-tools-handle" type="button" data-floating-tools-toggle aria-expanded="false" aria-label="展开快捷工具，可拖动调整位置" title="点击展开，拖动调整位置">
+    </button>
+    <div class="floating-tools-panel">
+        <a class="floating-tool floating-home-button" href="/" aria-label="首页" title="首页">
+            <svg class="floating-nav-icon" viewBox="0 0 20 20" aria-hidden="true">
+                <path d="m3 9.5 7-6 7 6"></path>
+                <path d="M5.5 8.5V17h9V8.5M8.5 17v-4.5h3V17"></path>
+            </svg>
+            <span class="floating-tool-label">首页</span>
+        </a>
+        <a class="floating-tool floating-about-button" href="/about/" aria-label="关于" title="关于">
+            <svg class="floating-nav-icon" viewBox="0 0 20 20" aria-hidden="true">
+                <circle cx="10" cy="6.5" r="3"></circle>
+                <path d="M4.5 17c.45-3.15 2.3-4.75 5.5-4.75s5.05 1.6 5.5 4.75"></path>
+            </svg>
+            <span class="floating-tool-label">关于</span>
+        </a>
+        <a class="floating-tool floating-archive-button" href="/archive/" aria-label="归档" title="归档">
+            <svg class="floating-nav-icon" viewBox="0 0 20 20" aria-hidden="true">
+                <path d="M3 5.5h14V17H3zM2.5 3h15v3h-15zM8 9.5h4"></path>
+            </svg>
+            <span class="floating-tool-label">归档</span>
+        </a>
+        <button class="floating-tool floating-search-button" type="button" data-search-open aria-label="打开文章搜索" title="搜索">
+            <svg class="floating-search-icon" viewBox="0 0 24 24" aria-hidden="true">
+                <circle cx="11" cy="11" r="6.5"></circle>
+                <path d="m16 16 4 4"></path>
+            </svg>
+            <span class="floating-tool-label">搜索</span>
+        </button>
+        <button class="floating-tool theme-switcher" type="button" data-theme-toggle aria-live="polite">
+            <span class="theme-switcher-icon" data-theme-icon aria-hidden="true">◐</span>
+            <span class="floating-tool-label" data-theme-label>经典</span>
+        </button>
+    </div>
+</div>
+<script>
+    // Drop Bootstarp low-performance Navbar
+    // Use customize navbar with high-quality material design animation
+    // in high-perf jank-free CSS3 implementation
+    var $body   = document.body;
+    var $toggle = document.querySelector('.navbar-toggle');
+    var $navbar = document.querySelector('#huxblog_navbar');
+    var $collapse = document.querySelector('.navbar-collapse');
+
+    var __HuxNav__ = {
+        close: function(){
+            $navbar.className = " ";
+            // wait until animation end.
+            setTimeout(function(){
+                // prevent frequently toggle
+                if($navbar.className.indexOf('in') < 0) {
+                    $collapse.style.height = "0px"
+                }
+            },400)
+        },
+        open: function(){
+            $collapse.style.height = "auto"
+            $navbar.className += " in";
+        }
+    }
+
+    // Bind Event
+    $toggle.addEventListener('click', function(e){
+        if ($navbar.className.indexOf('in') > 0) {
+            __HuxNav__.close()
+        }else{
+            __HuxNav__.open()
+        }
+    })
+
+    /**
+     * Since Fastclick is used to delegate 'touchstart' globally
+     * to hack 300ms delay in iOS by performing a fake 'click',
+     * Using 'e.stopPropagation' to stop 'touchstart' event from 
+     * $toggle/$collapse will break global delegation.
+     * 
+     * Instead, we use a 'e.target' filter to prevent handler
+     * added to document close HuxNav.  
+     *
+     * Also, we use 'click' instead of 'touchstart' as compromise
+     */
+    document.addEventListener('click', function(e){
+        if(e.target == $toggle) return;
+        if(e.target.className == 'icon-bar') return;
+        __HuxNav__.close();
+    })
+</script>
+
+    <div class="blog-search" data-blog-search data-index-url="/search.json" hidden>
+    <div class="blog-search-backdrop" data-search-close></div>
+    <section class="blog-search-dialog" role="dialog" aria-modal="true" aria-labelledby="blog-search-title">
+        <h2 class="sr-only" id="blog-search-title">搜索文章</h2>
+        <div class="blog-search-input-row">
+            <svg class="blog-search-icon" viewBox="0 0 24 24" aria-hidden="true">
+                <circle cx="11" cy="11" r="6.5"></circle>
+                <path d="m16 16 4 4"></path>
+            </svg>
+            <input
+                class="blog-search-input"
+                type="search"
+                inputmode="search"
+                autocomplete="off"
+                spellcheck="false"
+                placeholder="搜索标题、标签或文章内容"
+                aria-label="搜索文章"
+                aria-controls="blog-search-results"
+            >
+            <button class="blog-search-close" type="button" data-search-close aria-label="关闭搜索">×</button>
+        </div>
+        <div class="blog-search-status" data-search-status aria-live="polite">输入关键词开始搜索</div>
+        <div class="blog-search-results" id="blog-search-results" data-search-results role="listbox"></div>
+        <div class="blog-search-help" aria-hidden="true">
+            <span><kbd>↑</kbd><kbd>↓</kbd> 选择</span>
+            <span><kbd>Enter</kbd> 打开</span>
+            <span><kbd>Esc</kbd> 关闭</span>
+        </div>
+    </section>
+</div>
+
+
+    <!-- Image to hack wechat -->
+<!-- <img src="/img/icon_wechat.png" width="0" height="0"> -->
+<!-- <img src="/img/home-bg.jpg" width="0" height="0"> -->
+
+<!-- Post Header -->
+
+
+
+<style type="text/css">
+    header.intro-header{
+        position: relative;
+        background-image: url('/img/home-bg.jpg');
+        background: ;
+    }
+
+    
+</style>
+
+<header class="intro-header" >
+
+    <div class="header-mask"></div>
+    
+    <div class="container">
+        <div class="row">
+            <div class="col-lg-8 col-lg-offset-2 col-md-10 col-md-offset-1">
+                <div class="post-heading">
+                    <div class="tags">
+                        
+                        <a class="tag" href="/archive/?tag=%E5%B7%A5%E4%BD%9C%E9%A1%B9%E7%9B%AE%E6%80%9D%E8%80%83" title="工作项目思考">工作项目思考</a>
+                        
+                        <a class="tag" href="/archive/?tag=MQTT" title="MQTT">MQTT</a>
+                        
+                        <a class="tag" href="/archive/?tag=Java" title="Java">Java</a>
+                        
+                        <a class="tag" href="/archive/?tag=%E7%BA%BF%E4%B8%8A%E4%BA%8B%E6%95%85" title="线上事故">线上事故</a>
+                        
+                    </div>
+                    <h1>一次下游 IoT 故障如何拖垮 data-router：MQTT 重连风暴事故复盘</h1>
+                    
+                    <h2 class="subheading"></h2>
+                    <span class="meta post-meta-line">
+                        Posted by jamie Blog on 2026-08-11
+                        <span class="post-meta-separator" aria-hidden="true">·</span>
+                        <span class="post-view-count" aria-label="文章阅读量">阅读 <span id="busuanzi_page_pv">--</span> 次</span>
+                    </span>
+                </div>
+            </div>
+        </div>
+    </div>
+</header>
+
+
+
+
+
+
+
+<!-- Post Content -->
+<article>
+    <div class="container">
+        <div class="row">
+
+    <!-- Post Container -->
+            <div class="
+                col-lg-8 col-lg-offset-2
+                col-md-10 col-md-offset-1
+                post-container">
+
+                <!-- Multi-Lingual -->
+                
+
+				<blockquote>
+  <p>MQTT 重连风暴与 Native Thread OOM 的完整复盘</p>
+</blockquote>
+
+<table>
+  <thead>
+    <tr>
+      <th>项目</th>
+      <th>内容</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>事故时间</td>
+      <td>2026 年 8 月 10 日晚</td>
+    </tr>
+    <tr>
+      <td>影响范围</td>
+      <td>生产与测试环境设备连接</td>
+    </tr>
+    <tr>
+      <td>直接表现</td>
+      <td>设备离线、data-router 容器停止</td>
+    </tr>
+    <tr>
+      <td>最终原因</td>
+      <td>重复重连导致本地线程资源耗尽</td>
+    </tr>
+  </tbody>
+</table>
+
+<h2 id="摘要">摘要</h2>
+
+<p>data-router 负责维护设备连接，并将设备数据推送到下游 IoT 平台。正常情况下，设备只需建立一次 MQTT 连接并长期保持，因此原有重连机制中的并发缺陷长期没有暴露。</p>
+
+<p>2026 年 8 月 10 日晚，下游 IoT 平台出现异常，生产和测试环境均无法正常建立连接。持续性的连接失败触发了 data-router 原有重连机制中的竞态：SDK 自动重连、业务主动重连和设备重复初始化相互叠加，底层 MQTT 客户端及线程不断累积。最终 JVM 无法创建新的本地线程，抛出：</p>
+
+<div class="language-text highlighter-rouge"><div class="highlight"><pre class="highlight"><code><table class="rouge-table"><tbody><tr><td class="rouge-gutter gl"><pre class="lineno">1
+</pre></td><td class="rouge-code"><pre>java.lang.OutOfMemoryError: unable to create new native thread
+</pre></td></tr></tbody></table></code></pre></div></div>
+
+<p>随后 data-router 服务进程退出。</p>
+
+<p>核心结论：</p>
+
+<blockquote>
+  <p>下游 IoT 平台故障是事故诱因；data-router 缺少重连单飞、并发上限、连接超时和完整资源清理，才是故障扩散为自身宕机的直接原因。</p>
+</blockquote>
+
+<p>本次整改并不试图保证下游永远可用，而是保证：即使下游长时间不可用，data-router 也只能以受控方式重连，不能因为重试而拖垮自身。</p>
+
+<h2 id="事故时间线">事故时间线</h2>
+
+<p>以下时间线根据服务日志和匿名化微信群故障反馈记录整理。原始截图中的群名、昵称和内部系统画面不在本文展示。</p>
+
+<table>
+  <thead>
+    <tr>
+      <th>时间</th>
+      <th>阶段</th>
+      <th>现场情况</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>8 月 10 日 21 点后</td>
+      <td>连接异常出现</td>
+      <td>生产和测试环境陆续无法连接下游 IoT 平台，已有 MQTT 连接开始断开。</td>
+    </tr>
+    <tr>
+      <td>22 点后</td>
+      <td>重连持续放大</td>
+      <td>日志集中出现 <code class="language-plaintext highlighter-rouge">Connection lost</code>、<code class="language-plaintext highlighter-rouge">EOFException</code> 和 <code class="language-plaintext highlighter-rouge">Connect already in progress</code>，服务内部线程持续增长。</td>
+    </tr>
+    <tr>
+      <td>服务停止</td>
+      <td>容器退出</td>
+      <td>JVM 抛出 <code class="language-plaintext highlighter-rouge">unable to create new native thread</code>，data-router 进程退出，运行中的容器列表中已看不到该服务。</td>
+    </tr>
+    <tr>
+      <td>8 月 11 日 09:02</td>
+      <td>群内发现</td>
+      <td>群内反馈全部设备离线，并确认下游 IoT 侧也存在离线现象，开始核对影响范围。</td>
+    </tr>
+    <tr>
+      <td>09:14</td>
+      <td>确认范围</td>
+      <td>部分设备恢复，部分仍离线；现场确认生产和测试环境均受到影响，并询问下游平台是否有变更。</td>
+    </tr>
+    <tr>
+      <td>09:18</td>
+      <td>重启恢复</td>
+      <td>重启 data-router 后重新建立部分设备连接，服务恢复对外工作。</td>
+    </tr>
+    <tr>
+      <td>09:21 以后</td>
+      <td>进入排查</td>
+      <td>初步判断大量并发重连拖垮服务；随后通过历史日志确认 Native Thread OOM，并开始代码级整改。</td>
+    </tr>
+  </tbody>
+</table>
+
+<p>重启后能够恢复，说明设备数据和基础配置并未永久损坏；真正的问题集中在进程内部的连接状态、重连任务和线程资源。</p>
+
+<h2 id="日志证据与故障链路">日志证据与故障链路</h2>
+
+<p>事故日志呈现出一条连续而完整的证据链。单独看每一类异常都可能只是普通网络波动，组合起来则清楚地指向重连失控。</p>
+
+<h3 id="1-mqtt-连接丢失">1. MQTT 连接丢失</h3>
+
+<div class="language-text highlighter-rouge"><div class="highlight"><pre class="highlight"><code><table class="rouge-table"><tbody><tr><td class="rouge-gutter gl"><pre class="lineno">1
+2
+</pre></td><td class="rouge-code"><pre>org.eclipse.paho.client.mqttv3.MqttException: Connection lost
+Caused by: java.io.EOFException
+</pre></td></tr></tbody></table></code></pre></div></div>
+
+<p><code class="language-plaintext highlighter-rouge">EOFException</code> 表示客户端读取网络数据时，对端连接已经关闭。可能原因包括 Broker 异常、网络中断、对端重启或心跳超时。</p>
+
+<p>这类错误应当触发受控重连，本身不应造成服务宕机。</p>
+
+<h3 id="2-同一客户端发生重复连接">2. 同一客户端发生重复连接</h3>
+
+<div class="language-text highlighter-rouge"><div class="highlight"><pre class="highlight"><code><table class="rouge-table"><tbody><tr><td class="rouge-gutter gl"><pre class="lineno">1
+</pre></td><td class="rouge-code"><pre>Connect already in progress (32110)
+</pre></td></tr></tbody></table></code></pre></div></div>
+
+<p>该错误证明一个连接操作尚未结束时，又有其他线程对同一个 Paho 客户端发起连接。SDK 自动重连与业务回调主动重连叠加，是形成这一现象的重要条件。</p>
+
+<h3 id="3-jvm-无法创建本地线程">3. JVM 无法创建本地线程</h3>
+
+<div class="language-text highlighter-rouge"><div class="highlight"><pre class="highlight"><code><table class="rouge-table"><tbody><tr><td class="rouge-gutter gl"><pre class="lineno">1
+2
+</pre></td><td class="rouge-code"><pre>java.lang.OutOfMemoryError:
+unable to create new native thread
+</pre></td></tr></tbody></table></code></pre></div></div>
+
+<p>该异常不等同于 Java Heap 已满。每个 Java 线程都需要操作系统分配线程栈、PID 和本地内存。当 MQTT 客户端及其线程持续累积，容器的内存或线程数量限制最终会被耗尽。</p>
+
+<h3 id="完整故障链路">完整故障链路</h3>
+
+<div class="language-text highlighter-rouge"><div class="highlight"><pre class="highlight"><code><table class="rouge-table"><tbody><tr><td class="rouge-gutter gl"><pre class="lineno">1
+2
+3
+4
+5
+6
+7
+8
+</pre></td><td class="rouge-code"><pre>下游 IoT 平台不可用
+    -&gt; MQTT Connection lost
+    -&gt; SDK 自动重连 + 业务主动重连
+    -&gt; 同一设备重复创建或连接 MQTT 客户端
+    -&gt; 旧客户端和线程池未及时清理
+    -&gt; 本地线程资源耗尽
+    -&gt; OutOfMemoryError
+    -&gt; data-router 进程退出
+</pre></td></tr></tbody></table></code></pre></div></div>
+
+<h2 id="原有机制为何没有拦住重复创建">原有机制为何没有拦住重复创建</h2>
+
+<p>原有代码并非完全没有考虑重复创建。它使用 Redisson 分布式锁控制同一 <code class="language-plaintext highlighter-rouge">deviceId</code> 的初始化，并用 Map 保存已经创建的 <code class="language-plaintext highlighter-rouge">IoTDevice</code>。</p>
+
+<p>设计意图接近“同一设备只创建一次”，但在异常连接场景下仍存在多个缺口。</p>
+
+<h3 id="问题一锁租期短于连接耗时">问题一：锁租期短于连接耗时</h3>
+
+<p>锁租期约为 5 秒，而下游异常时 MQTT 连接可能持续几十秒。锁提前过期后，前一个连接仍在执行，后一个线程已经可以再次创建设备。</p>
+
+<div class="language-text highlighter-rouge"><div class="highlight"><pre class="highlight"><code><table class="rouge-table"><tbody><tr><td class="rouge-gutter gl"><pre class="lineno">1
+2
+3
+4
+5
+</pre></td><td class="rouge-code"><pre>线程 A 获得锁并开始连接
+-&gt; 5 秒后锁自动过期
+-&gt; 线程 A 仍在连接
+-&gt; 线程 B 再次获得锁
+-&gt; 同一个 deviceId 开始第二次连接
+</pre></td></tr></tbody></table></code></pre></div></div>
+
+<h3 id="问题二map-操作不是原子的">问题二：Map 操作不是原子的</h3>
+
+<p><code class="language-plaintext highlighter-rouge">containsKey()</code>、创建设备和 <code class="language-plaintext highlighter-rouge">put()</code> 是三个独立步骤。原来的 <code class="language-plaintext highlighter-rouge">HashMap</code> 也不是线程安全容器，多个线程可能同时判断设备不存在并各自创建连接。</p>
+
+<p>最终 Map 中可能只保留一个实例，但另一个 MQTT 客户端及其线程已经被创建。</p>
+
+<h3 id="问题三两套重连机制相互竞争">问题三：两套重连机制相互竞争</h3>
+
+<p>华为 IoT SDK 内部自动重连与业务 <code class="language-plaintext highlighter-rouge">connectionLost</code> 回调主动重连同时存在，两条重连路径绕过了统一的并发控制。</p>
+
+<div class="language-text highlighter-rouge"><div class="highlight"><pre class="highlight"><code><table class="rouge-table"><tbody><tr><td class="rouge-gutter gl"><pre class="lineno">1
+2
+3
+</pre></td><td class="rouge-code"><pre>SDK 正在重连
++ 业务回调再次调用 connect
+= Connect already in progress
+</pre></td></tr></tbody></table></code></pre></div></div>
+
+<h3 id="问题四失效客户端没有被完整清理">问题四：失效客户端没有被完整清理</h3>
+
+<p>失效连接只做上层关闭时，底层 Paho 客户端、接收线程和 SDK 线程池可能没有及时终止。每次重连都会进一步累积资源。</p>
+
+<h2 id="根因结论">根因结论</h2>
+
+<p>这次事故可以分为三个层次：</p>
+
+<table>
+  <thead>
+    <tr>
+      <th>层次</th>
+      <th>结论</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>事故诱因</td>
+      <td>下游 IoT 平台持续不可用，生产和测试环境连接同时断开。</td>
+    </tr>
+    <tr>
+      <td>机制缺陷</td>
+      <td>data-router 的设备初始化和重连缺少原子控制、并发上限、超时退出及完整资源清理。</td>
+    </tr>
+    <tr>
+      <td>直接死因</td>
+      <td>重复连接持续创建 MQTT 相关线程，最终触发 <code class="language-plaintext highlighter-rouge">unable to create new native thread</code>。</td>
+    </tr>
+  </tbody>
+</table>
+
+<p>因此，不能简单地把事故归因于下游平台故障。</p>
+
+<p>更准确的说法是：</p>
+
+<blockquote>
+  <p>下游 IoT 平台故障触发了 data-router 重连机制中的并发和资源管理缺陷，最终形成级联故障。</p>
+</blockquote>
+
+<h2 id="整改方案">整改方案</h2>
+
+<p>整改原则是把重连从“收到异常就再次 <code class="language-plaintext highlighter-rouge">connect</code>”改造成一个有唯一入口、有并发边界、有超时、有退避、可取消、可清理的完整生命周期。</p>
+
+<h3 id="1-关闭-sdk-自动重连统一重连入口">1. 关闭 SDK 自动重连，统一重连入口</h3>
+
+<p>通过 <code class="language-plaintext highlighter-rouge">CustomOptions</code> 关闭 SDK 内部自动重连，所有重连任务统一交给 data-router 的 <code class="language-plaintext highlighter-rouge">DeviceReconnectCoordinator</code>，避免 SDK 与业务代码相互竞争。</p>
+
+<div class="language-java highlighter-rouge"><div class="highlight"><pre class="highlight"><code><table class="rouge-table"><tbody><tr><td class="rouge-gutter gl"><pre class="lineno">1
+2
+</pre></td><td class="rouge-code"><pre><span class="nc">CustomOptions</span> <span class="n">options</span> <span class="o">=</span> <span class="k">new</span> <span class="nc">CustomOptions</span><span class="o">();</span>
+<span class="n">options</span><span class="o">.</span><span class="na">setReConnect</span><span class="o">(</span><span class="kc">false</span><span class="o">);</span>
+</pre></td></tr></tbody></table></code></pre></div></div>
+
+<h3 id="2-按-deviceid-原子创建和发布设备">2. 按 deviceId 原子创建和发布设备</h3>
+
+<p>新增设备实例注册表。同一个 <code class="language-plaintext highlighter-rouge">deviceId</code> 同时只允许一个线程执行创建，其他调用者等待并共享同一次创建结果。</p>
+
+<p>设备必须完成参数设置、监听器注册和连接后，才会发布给其他线程使用。</p>
+
+<p>这种重复调用抑制机制通常称为 Singleflight：</p>
+
+<div class="language-text highlighter-rouge"><div class="highlight"><pre class="highlight"><code><table class="rouge-table"><tbody><tr><td class="rouge-gutter gl"><pre class="lineno">1
+2
+3
+</pre></td><td class="rouge-code"><pre>10 个线程同时请求 device-001
+-&gt; 只有 1 个线程真正创建 IoTDevice
+-&gt; 其他 9 个线程等待并共享结果
+</pre></td></tr></tbody></table></code></pre></div></div>
+
+<p><code class="language-plaintext highlighter-rouge">device-002</code> 仍然可以独立处理，因此它不是全局单例，而是按 Key 合并重复调用。</p>
+
+<h3 id="3-固定重连工作线程数量">3. 固定重连工作线程数量</h3>
+
+<p>全服务共享一个固定大小的重连调度器，工作线程数量限制为 2。</p>
+
+<p>大量设备同时离线时，只会形成受控任务队列，不会为每个断线事件创建新线程。</p>
+
+<h3 id="4-同一设备的连接生命周期串行化">4. 同一设备的连接生命周期串行化</h3>
+
+<p>初始化、重连、主动关闭和关闭后重新初始化都按照 <code class="language-plaintext highlighter-rouge">deviceId</code> 进入同一个连接槽。</p>
+
+<p>同一个设备不能并发连接，不同设备仍可并行处理。</p>
+
+<h3 id="5-失败退避与永久错误识别">5. 失败退避与永久错误识别</h3>
+
+<p>连接失败后采用逐步退避：</p>
+
+<div class="language-text highlighter-rouge"><div class="highlight"><pre class="highlight"><code><table class="rouge-table"><tbody><tr><td class="rouge-gutter gl"><pre class="lineno">1
+</pre></td><td class="rouge-code"><pre>1s -&gt; 2s -&gt; 4s -&gt; 8s -&gt; 16s -&gt; 30s
+</pre></td></tr></tbody></table></code></pre></div></div>
+
+<p>最大等待时间为 30 秒。鉴权失败等永久错误不再持续重试，而是清理连接并记录失败状态。</p>
+
+<h3 id="6-连接看门狗">6. 连接看门狗</h3>
+
+<p>每次连接设置 75 秒看门狗。</p>
+
+<p>连接长时间没有返回时，主动关闭对应的底层 Paho 客户端。如果看门狗已经关闭，则直接拒绝新连接，避免连接在没有超时保护的情况下执行。</p>
+
+<h3 id="7-完整清理底层资源">7. 完整清理底层资源</h3>
+
+<p>关闭设备时依次处理：</p>
+
+<ul>
+  <li>关闭华为 IoT SDK 客户端；</li>
+  <li>强制断开并关闭底层 Paho MQTT 客户端；</li>
+  <li>停止 SDK 内部线程池；</li>
+  <li>取消当前设备的重连任务；</li>
+  <li>按具体实例精确移除注册信息，避免旧回调误删新连接。</li>
+</ul>
+
+<h3 id="8-安全停机">8. 安全停机</h3>
+
+<p>Spring 开始停止 data-router 后，服务先进入 <code class="language-plaintext highlighter-rouge">shuttingDown</code> 状态，拒绝新设备初始化，然后取消重连、终止活动连接、清理客户端和线程池。</p>
+
+<div class="language-text highlighter-rouge"><div class="highlight"><pre class="highlight"><code><table class="rouge-table"><tbody><tr><td class="rouge-gutter gl"><pre class="lineno">1
+2
+3
+4
+5
+6
+</pre></td><td class="rouge-code"><pre>收到停止信号
+    -&gt; 拒绝新设备初始化
+    -&gt; 取消重连任务
+    -&gt; 中断活动连接并清理 MQTT 客户端
+    -&gt; 停止共享线程池
+    -&gt; JVM 退出
+</pre></td></tr></tbody></table></code></pre></div></div>
+
+<p>停机过程设置最大等待期限，防止某个无法退出的 SDK 调用长期阻塞容器关闭。</p>
+
+<h3 id="设计边界">设计边界</h3>
+
+<p>当前部署只有一个 data-router 实例，因此采用 JVM 内按 <code class="language-plaintext highlighter-rouge">deviceId</code> 协调即可，不再依赖短租期的 Redis 分布式锁。</p>
+
+<p>如果未来扩展为多实例，需要重新设计跨实例的设备归属和连接协调机制。</p>
+
+<h2 id="验证结果">验证结果</h2>
+
+<p>整改完成后，围绕事故中出现的竞态、超时、OOM 和停机问题补充了针对性回归测试。</p>
+
+<table>
+  <thead>
+    <tr>
+      <th>验证项</th>
+      <th>结果</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>data-router 单元及并发测试</td>
+      <td>60 项全部通过</td>
+    </tr>
+    <tr>
+      <td>九模块 Maven 打包</td>
+      <td><code class="language-plaintext highlighter-rouge">BUILD SUCCESS</code></td>
+    </tr>
+    <tr>
+      <td>同设备并发初始化</td>
+      <td>只创建一个 <code class="language-plaintext highlighter-rouge">IoTDevice</code></td>
+    </tr>
+    <tr>
+      <td>重复 <code class="language-plaintext highlighter-rouge">connectionLost</code></td>
+      <td>只保留一个重连任务</td>
+    </tr>
+    <tr>
+      <td>连接超时</td>
+      <td>看门狗清理 Paho 客户端</td>
+    </tr>
+    <tr>
+      <td>关闭与重新初始化竞态</td>
+      <td>旧实例不会影响新实例</td>
+    </tr>
+    <tr>
+      <td>停机期间的新初始化</td>
+      <td>立即拒绝并完成有界清理</td>
+    </tr>
+    <tr>
+      <td>模拟 Native Thread OOM</td>
+      <td>共享调度器受控重试，不扩散线程</td>
+    </tr>
+  </tbody>
+</table>
+
+<p>修复后的故障表现：</p>
+
+<div class="language-text highlighter-rouge"><div class="highlight"><pre class="highlight"><code><table class="rouge-table"><tbody><tr><td class="rouge-gutter gl"><pre class="lineno">1
+2
+3
+4
+5
+6
+</pre></td><td class="rouge-code"><pre>IoT 平台不可用
+    -&gt; 每个设备最多保留一个重连任务
+    -&gt; 全服务最多两个重连线程执行
+    -&gt; 失败后逐步退避
+    -&gt; 超时连接被主动清理
+    -&gt; data-router 保持存活并等待平台恢复
+</pre></td></tr></tbody></table></code></pre></div></div>
+
+<p>下游故障期间，设备数据仍可能暂时无法推送，但故障不会再通过无限重连轻易扩散为 data-router 自身宕机。</p>
+
+<h2 id="经验与后续关注">经验与后续关注</h2>
+
+<h3 id="1-重试是完整的可靠性机制">1. 重试是完整的可靠性机制</h3>
+
+<p>可靠重试至少要具备：</p>
+
+<ul>
+  <li>最大并发数；</li>
+  <li>超时时间；</li>
+  <li>失败退避；</li>
+  <li>重试去重；</li>
+  <li>任务取消；</li>
+  <li>永久错误识别；</li>
+  <li>资源释放；</li>
+  <li>服务停机处理。</li>
+</ul>
+
+<p>缺少约束的重试，本身就可能成为新的故障源。</p>
+
+<h3 id="2-外部故障必须被隔离">2. 外部故障必须被隔离</h3>
+
+<div class="language-text highlighter-rouge"><div class="highlight"><pre class="highlight"><code><table class="rouge-table"><tbody><tr><td class="rouge-gutter gl"><pre class="lineno">1
+2
+</pre></td><td class="rouge-code"><pre>正确边界：下游不可用 -&gt; 当前业务失败或延迟 -&gt; 调用方保持存活
+错误边界：下游不可用 -&gt; 无限重试 -&gt; 资源耗尽 -&gt; 整条链路停止
+</pre></td></tr></tbody></table></code></pre></div></div>
+
+<p>这与微服务中的熔断、限流、隔离和降级遵循相同原则：阻止故障沿调用链继续扩散。</p>
+
+<h3 id="3-oom-不一定是-java-heap-问题">3. OOM 不一定是 Java Heap 问题</h3>
+
+<p>遇到 <code class="language-plaintext highlighter-rouge">unable to create new native thread</code> 时，应优先检查：</p>
+
+<ul>
+  <li>JVM 当前线程数；</li>
+  <li>线程池是否被重复创建；</li>
+  <li><code class="language-plaintext highlighter-rouge">-Xss</code> 配置；</li>
+  <li>容器内存限制；</li>
+  <li>cgroup PID 限制；</li>
+  <li><code class="language-plaintext highlighter-rouge">ulimit -u</code>；</li>
+  <li>MQTT 客户端和线程池是否正确关闭。</li>
+</ul>
+
+<p>盲目增加 <code class="language-plaintext highlighter-rouge">-Xmx</code> 可能进一步压缩本地内存空间，使线程创建问题更加严重。</p>
+
+<h3 id="4-异常场景才真正检验连接管理">4. 异常场景才真正检验连接管理</h3>
+
+<p>“一次连接成功”只能验证正常路径。连接管理还应覆盖：</p>
+
+<ul>
+  <li>下游长时间不可用；</li>
+  <li>网络反复抖动；</li>
+  <li>大量设备同时断开；</li>
+  <li>连接过程永久阻塞；</li>
+  <li>连接期间服务停止。</li>
+</ul>
+
+<h3 id="5-一个设备一个连接仍需容量规划">5. 一个设备一个连接仍需容量规划</h3>
+
+<p>本次修复消除了重复连接和线程泄漏，但当前架构仍为每个设备保留一个常驻 MQTT 连接。</p>
+
+<p>设备规模增长后，需要持续关注：</p>
+
+<ul>
+  <li>MQTT 连接总数；</li>
+  <li>JVM 线程数；</li>
+  <li>Java Heap 和本地内存；</li>
+  <li>文件描述符数量；</li>
+  <li>心跳与重连流量；</li>
+  <li>下游平台的连接上限。</li>
+</ul>
+
+<h3 id="建议监控">建议监控</h3>
+
+<p>建议增加以下监控和告警：</p>
+
+<ul>
+  <li>JVM 线程总数；</li>
+  <li>活跃 MQTT 客户端数；</li>
+  <li>待执行及正在执行的重连任务数；</li>
+  <li>MQTT 连接耗时和超时次数；</li>
+  <li>容器内存使用量；</li>
+  <li>文件描述符和 PID 使用量；</li>
+  <li>容器退出原因与历史日志留存。</li>
+</ul>
+
+<h2 id="结语">结语</h2>
+
+<p>这次事故表面上是下游 IoT 平台连接异常，最终表现为全部设备离线和 data-router 服务停止。</p>
+
+<p>深入排查后发现，真正导致服务宕机的是原有重连机制在异常情况下产生了重复连接和线程资源累积，最终触发：</p>
+
+<div class="language-text highlighter-rouge"><div class="highlight"><pre class="highlight"><code><table class="rouge-table"><tbody><tr><td class="rouge-gutter gl"><pre class="lineno">1
+</pre></td><td class="rouge-code"><pre>OutOfMemoryError: unable to create new native thread
+</pre></td></tr></tbody></table></code></pre></div></div>
+
+<p>经过整改，data-router 已补齐以下能力：</p>
+
+<ul>
+  <li>按设备原子创建连接；</li>
+  <li>重复重连抑制；</li>
+  <li>固定线程池隔离；</li>
+  <li>失败退避；</li>
+  <li>连接超时保护；</li>
+  <li>MQTT 资源强制清理；</li>
+  <li>安全停机。</li>
+</ul>
+
+<p>外部依赖发生故障无法完全避免。系统真正需要保证的是：</p>
+
+<blockquote>
+  <p><strong>外部故障不能无限放大，并最终拖垮系统自身。</strong></p>
+</blockquote>
+
+<hr />
+
+<p>本文依据服务日志、代码排查结果及匿名化现场沟通记录整理。</p>
+
+
+                <hr style="visibility: hidden;">
+                <ul class="pager">
+
+
+                    
+                    <li class="next">
+                        <a href="/blog/2024/02/05/8%E4%B8%AA%E4%BC%98%E5%8C%96%E5%BE%AE%E6%9C%8D%E5%8A%A1%E5%BB%B6%E8%BF%9F%E7%9A%84%E7%AD%96%E7%95%A5/" data-toggle="tooltip" data-placement="top" title="8个优化微服务延迟的策略">
+                        下一篇<br>
+                        <span>8个优化微服务延迟的策略</span>
+                        </a>
+                    </li>
+                    
+
+                    
+                    <li class="previous">
+                        <a href="/blog/2026/08/24/Dinger%E9%85%8D%E7%BD%AE%E5%BC%82%E5%B8%B8%E8%A7%A6%E5%8F%91Nacos-Client%E7%BA%BF%E7%A8%8B%E8%80%97%E5%B0%BD%E4%BA%8B%E6%95%85%E5%A4%8D%E7%9B%98/" data-toggle="tooltip" data-placement="top" title="Dinger 配置异常如何触发 Nacos Client 2.0.4 缺陷，并让 Java 容器增长到 7000 线程">
+                            上一篇<br>
+                            <span>Dinger 配置异常如何触发 Nacos Client 2.0.4 缺陷，并让 Java 容器增长到 7000 线程</span>
+                        </a>
+                    </li>
+                    
+
+                </ul>
+                <hr style="visibility: hidden;">
+
+            </div>  
+
+    <!-- Side Catalog Container -->
+        
+            <div class="
+                col-lg-2 col-lg-offset-0
+                visible-lg-block
+                sidebar-container
+                catalog-container">
+                <div class="side-catalog">
+                    <hr class="hidden-sm hidden-xs">
+                    <h5>
+                        <a class="catalog-toggle" href="#">目录</a>
+                    </h5>
+                    <ul class="catalog-body"></ul>
+                </div>
+            </div>
+        
+
+    <!-- Sidebar Container -->
+            <div class="
+                col-lg-8 col-lg-offset-2
+                col-md-10 col-md-offset-1
+                sidebar-container">
+
+                <!-- Featured Tags -->
+                
+
+
+<section>
+    
+        <hr class="hidden-sm hidden-xs">
+    
+    <h5><a href="/archive/">归档</a></h5>
+    <div class="tags">
+        
+        
+        
+        </a>
+        
+        
+                <a data-sort="0099" 
+                    href="/archive/?tag=java"
+                    title="java"
+                    rel="10">java</a>
+        
+                <a data-sort="0060" 
+                    href="/archive/?tag=%E6%97%A5%E5%B8%B8%E8%AE%B0%E5%BD%95"
+                    title="日常记录"
+                    rel="49">日常记录</a>
+        
+                <a data-sort="0097" 
+                    href="/archive/?tag=MySQL"
+                    title="MySQL"
+                    rel="12">MySQL</a>
+        
+                <a data-sort="0101" 
+                    href="/archive/?tag=%E5%A4%9A%E7%BA%BF%E7%A8%8B"
+                    title="多线程"
+                    rel="8">多线程</a>
+        
+                <a data-sort="0102" 
+                    href="/archive/?tag=Spring"
+                    title="Spring"
+                    rel="7">Spring</a>
+        
+                <a data-sort="0105" 
+                    href="/archive/?tag=%E8%AE%BE%E8%AE%A1%E6%A8%A1%E5%BC%8F"
+                    title="设计模式"
+                    rel="4">设计模式</a>
+        
+                <a data-sort="0105" 
+                    href="/archive/?tag=Redis"
+                    title="Redis"
+                    rel="4">Redis</a>
+        
+                <a data-sort="0105" 
+                    href="/archive/?tag=SpringBoot"
+                    title="SpringBoot"
+                    rel="4">SpringBoot</a>
+        
+                <a data-sort="0105" 
+                    href="/archive/?tag=Zookeeper"
+                    title="Zookeeper"
+                    rel="4">Zookeeper</a>
+        
+                <a data-sort="0106" 
+                    href="/archive/?tag=%E5%BE%AE%E6%9C%8D%E5%8A%A1"
+                    title="微服务"
+                    rel="3">微服务</a>
+        
+                <a data-sort="0106" 
+                    href="/archive/?tag=%E7%AE%97%E6%B3%95"
+                    title="算法"
+                    rel="3">算法</a>
+        
+                <a data-sort="0106" 
+                    href="/archive/?tag=Docker"
+                    title="Docker"
+                    rel="3">Docker</a>
+        
+                <a data-sort="0107" 
+                    href="/archive/?tag=%E5%B7%A5%E4%BD%9C%E9%A1%B9%E7%9B%AE%E6%80%9D%E8%80%83"
+                    title="工作项目思考"
+                    rel="2">工作项目思考</a>
+        
+                <a data-sort="0107" 
+                    href="/archive/?tag=%E7%BA%BF%E4%B8%8A%E4%BA%8B%E6%95%85"
+                    title="线上事故"
+                    rel="2">线上事故</a>
+        
+                <a data-sort="0107" 
+                    href="/archive/?tag=ChatGPT"
+                    title="ChatGPT"
+                    rel="2">ChatGPT</a>
+        
+                <a data-sort="0107" 
+                    href="/archive/?tag=Java"
+                    title="Java"
+                    rel="2">Java</a>
+        
+                <a data-sort="0107" 
+                    href="/archive/?tag=MQTT"
+                    title="MQTT"
+                    rel="2">MQTT</a>
+        
+                <a data-sort="0107" 
+                    href="/archive/?tag=MyBatis"
+                    title="MyBatis"
+                    rel="2">MyBatis</a>
+        
+                <a data-sort="0107" 
+                    href="/archive/?tag=NIO"
+                    title="NIO"
+                    rel="2">NIO</a>
+        
+                <a data-sort="0107" 
+                    href="/archive/?tag=Netty"
+                    title="Netty"
+                    rel="2">Netty</a>
+        
+                <a data-sort="0107" 
+                    href="/archive/?tag=SpringCloud"
+                    title="SpringCloud"
+                    rel="2">SpringCloud</a>
+        
+                <a data-sort="0107" 
+                    href="/archive/?tag=SpringCloud-GateWay"
+                    title="SpringCloud-GateWay"
+                    rel="2">SpringCloud-GateWay</a>
+        
+                <a data-sort="0107" 
+                    href="/archive/?tag=k8s"
+                    title="k8s"
+                    rel="2">k8s
+    </div>
+</section>
+
+
+                <!-- Friends Blog -->
+<!--                -->
+            </div>
+        </div>
+    </div>
+</article>
+
+<!-- add support for mathjax by voleking-->
+
+
+
+<!-- Page-view counter: Busuanzi does not accept localhost or 127.0.0.1. -->
+<script src="https://cdn.busuanzi.cc/busuanzi/3.6.9/busuanzi.min.js" defer></script>
+
+
+
+
+
+<!-- async load function -->
+<script>
+    function async(u, c) {
+      var d = document, t = 'script',
+          o = d.createElement(t),
+          s = d.getElementsByTagName(t)[0];
+      o.src = u;
+      if (c) { o.addEventListener('load', function (e) { c(null, e); }, false); }
+      s.parentNode.insertBefore(o, s);
+    }
+</script>
+<!-- anchor-js, Doc:http://bryanbraun.github.io/anchorjs/ -->
+<script>
+    async("//cdnjs.cloudflare.com/ajax/libs/anchor-js/1.1.1/anchor.min.js",function(){
+        anchors.options = {
+          visible: 'always',
+          placement: 'right',
+          icon: '#'
+        };
+        anchors.add().remove('.intro-header h1').remove('.subheading').remove('.sidebar-container h5');
+    })
+</script>
+<style>
+    /* place left on bigger screen */
+    @media all and (min-width: 800px) {
+        .anchorjs-link{
+            position: absolute;
+            left: -0.75em;
+            font-size: 1.1em;
+            margin-top : -0.1em;
+        }
+    }
+</style>
+
+
+
+    <!-- Footer -->
+<footer>
+    <div class="container">
+        <div class="row">
+            <div class="col-lg-8 col-lg-offset-2 col-md-10 col-md-offset-1">
+                <!-- &lt;!&ndash; SNS Link &ndash;&gt;
+                
+
+
+<ul class="list-inline text-center">
+
+
+  
+
+</ul> -->
+
+                <p class="copyright text-muted">
+                    <!-- Copyright &copy; jamie Blog 2026
+                    <br> -->
+                    Copyright &copy; 2016–2026 jamie Blog<br>
+                    Powered by <a href="/about/">jamie</a>
+               </p>
+           </div>
+       </div>
+   </div>
+</footer>
+
+<!-- jQuery -->
+<script src="/js/jquery.min.js "></script>
+
+<!-- Bootstrap Core JavaScript -->
+<!-- Currently, only navbar scroll-down effect at desktop still depends on this -->
+<script src="/js/bootstrap.min.js "></script>
+
+<!-- Custom Theme JavaScript -->
+<script src="/js/hux-blog.min.js "></script>
+<script src="/js/blog-search.js"></script>
+
+
+<!-- Article image preview -->
+<script src="/js/post-image-preview.js"></script>
+
+
+<!-- Service Worker -->
+
+<script src="/js/snackbar.js "></script>
+<script src="/js/sw-registration.js "></script>
+
+
+
+
+<!-- async load function -->
+<script>
+    function async(u, c) {
+      var d = document, t = 'script',
+          o = d.createElement(t),
+          s = d.getElementsByTagName(t)[0];
+      o.src = u;
+      if (c) { o.addEventListener('load', function (e) { c(null, e); }, false); }
+      s.parentNode.insertBefore(o, s);
+    }
+</script>
+
+<!--
+     Because of the native support for backtick-style fenced code blocks
+     right within the Markdown is landed in Github Pages,
+     From V1.6, There is no need for Highlight.js,
+     so Huxblog drops it officially.
+
+     - https://github.com/blog/2100-github-pages-now-faster-and-simpler-with-jekyll-3-0
+     - https://help.github.com/articles/creating-and-highlighting-code-blocks/
+     - https://github.com/jneen/rouge/wiki/list-of-supported-languages-and-lexers
+-->
+<!--
+    <script>
+        async("http://cdn.bootcss.com/highlight.js/8.6/highlight.min.js", function(){
+            hljs.initHighlightingOnLoad();
+        })
+    </script>
+    <link href="http://cdn.bootcss.com/highlight.js/8.6/styles/github.min.css" rel="stylesheet">
+-->
+
+
+
+
+
+<!--fastClick.js -->
+<!-- <script>
+    async("//cdnjs.cloudflare.com/ajax/libs/fastclick/1.0.6/fastclick.min.js", function(){
+        var $nav = document.querySelector("nav");
+        if($nav) FastClick.attach($nav);
+    })
+</script> -->
+
+
+<!-- Google Analytics -->
+
+<script>
+    // dynamic User by Hux
+    var _gaId = 'UA-49627206-1';
+    var _gaDomain = 'jamie.me';
+
+    // Originial
+    (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+    (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+    m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+    });
+    // (window,document,'script','//www.google-analytics.com/analytics.js','ga');
+
+    ga('create', _gaId, _gaDomain);
+    ga('send', 'pageview');
+</script>
+
+
+
+<!-- Baidu Tongji -->
+
+
+
+<!-- Side Catalog -->
+
+<script type="text/javascript">
+    function generateCatalog (selector) {
+
+        // interop with multilangual 
+        if ('' == 'true') {
+            _containerSelector = 'div.post-container.active'
+        } else {
+            _containerSelector = 'div.post-container'
+        }
+
+        // init
+        var P = $(_containerSelector),a,n,t,l,i,c;
+        a = P.find('h1,h2,h3,h4,h5,h6');
+
+        // clean
+        $(selector).html('')
+
+        // appending
+        a.each(function () {
+            n = $(this).prop('tagName').toLowerCase();
+            i = "#"+$(this).prop('id');
+            t = $(this).text();
+            c = $('<a href="'+i+'" rel="nofollow">'+t+'</a>');
+            l = $('<li class="'+n+'_nav"></li>').append(c);
+            $(selector).append(l);
+        });
+        return true;
+    }
+
+    generateCatalog(".catalog-body");
+
+    // toggle side catalog
+    $(".catalog-toggle").click((function(e){
+        e.preventDefault();
+        $('.side-catalog').toggleClass("fold")
+    }))
+
+    /*
+     * Doc: https://github.com/davist11/jQuery-One-Page-Nav
+     * Fork by Hux to support padding
+     */
+    async("/js/jquery.nav.js", function () {
+        $('.catalog-body').onePageNav({
+            currentClass: "active",
+            changeHash: !1,
+            easing: "swing",
+            filter: "",
+            scrollSpeed: 700,
+            scrollOffset: 0,
+            scrollThreshold: .2,
+            begin: null,
+            end: null,
+            scrollChange: null,
+            padding: 80
+        });
+    });
+</script>
+
+
+
+<!-- Multi-Lingual -->
+
+
+
+
+<!-- Image to hack wechat -->
+<!--<img src="/img/icon_wechat.png" width="0" height="0" />-->
+<!-- Migrate from head to bottom, no longer block render and still work -->
+
+</body>
+
+</html>

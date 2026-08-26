@@ -1,0 +1,876 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="baidu-site-verification" content="code-8XHgqNvUKa" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+    <meta name="description" content="关于后端程序设计 | 这里是 jamie 的个人博客。">
+    <meta name="keywords"  content="jamie, java, spring, jamie的博客, 博客, 个人网站, 互联网, 后端, jamie's blog">
+    <meta name="theme-color" content="#000000">
+
+    <!-- Apply the saved theme before rendering to avoid a color flash. -->
+    <script>
+        (function () {
+            var theme = null;
+            try {
+                theme = localStorage.getItem('jamie-blog-theme');
+            } catch (error) {}
+
+            if (['classic', 'eye', 'dark'].indexOf(theme) === -1) {
+                theme = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches
+                    ? 'dark'
+                    : 'classic';
+            }
+
+            document.documentElement.setAttribute('data-theme', theme);
+        })();
+    </script>
+    
+    <!-- Open Graph -->
+    <meta property="og:title" content="MySQL中Explain总结 - jamie的博客 | jamie Blog">
+    
+    <meta property="og:type" content="article">
+    <meta property="og:description" content="1.背景
+
+">
+    
+    <meta property="article:published_time" content="2019-06-14T00:00:00Z">
+    
+    
+    
+    <meta property="article:tag" content="MySQL">
+    
+    <meta property="article:tag" content="日常记录">
+    
+    
+    <meta property="og:image" content="https://jinw389-lab.github.io/images/wexin.png">
+    <meta property="og:url" content="https://jinw389-lab.github.io/blog/2019/06/14/MySQL%E4%B8%ADExplain%E6%80%BB%E7%BB%93/">
+    <meta property="og:site_name" content="jamie的博客 | jamie Blog">
+    
+    <title>MySQL中Explain总结 - jamie的博客 | jamie Blog</title>
+
+    <!-- Web App Manifest -->
+    <link rel="manifest" href="/pwa/manifest.json">
+
+    <!-- Favicon -->
+    <link rel="shortcut icon" href="/img/logo.jpg">
+    
+    <!-- Canonical URL -->
+    <link rel="canonical" href="https://jinw389-lab.github.io/blog/2019/06/14/MySQL%E4%B8%ADExplain%E6%80%BB%E7%BB%93/">
+
+    <!-- Bootstrap Core CSS -->
+    <link rel="stylesheet" href="/css/bootstrap.min.css">
+
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="/css/hux-blog.min.css">
+    <link rel="stylesheet" href="/css/interaction.css">
+    <link rel="stylesheet" href="/css/themes.css">
+    <link rel="stylesheet" href="/css/search.css">
+    <script src="/js/theme-switcher.js" defer></script>
+
+    <!-- Custom Fonts -->
+    <!-- <link href="http://maxcdn.bootstrapcdn.com/font-awesome/4.3.0/css/font-awesome.min.css" rel="stylesheet" type="text/css"> -->
+    <!-- Hux change font-awesome CDN to qiniu -->
+    <!-- <link href="//cdnjs.cloudflare.com/ajax/libs/font-awesome/4.6.3/css/font-awesome.min.css" rel="stylesheet" type="text/css"> -->
+
+
+    <!-- HTML5 Shim and Respond.js IE8 support of HTML5 elements and media queries -->
+    <!-- WARNING: Respond.js doesn't work if you view the page via file:// -->
+    <!--[if lt IE 9]>
+        <script src="https://oss.maxcdn.com/libs/html5shiv/3.7.0/html5shiv.js"></script>
+        <script src="https://oss.maxcdn.com/libs/respond.js/1.4.2/respond.min.js"></script>
+    <![endif]-->
+
+    <!-- ga & ba script hoook -->
+    <script></script>
+</head>
+
+
+<!-- hack iOS CSS :active style -->
+<body ontouchstart="">
+
+    <!-- Navigation -->
+
+<nav class="navbar navbar-default navbar-custom navbar-fixed-top">
+
+    <div class="container-fluid">
+        <!-- Brand and toggle get grouped for better mobile display -->
+        <div class="navbar-header page-scroll">
+            <button type="button" class="navbar-toggle">
+                <span class="sr-only">Toggle navigation</span>
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+            </button>
+            <a class="navbar-brand" href="/">jamie Blog</a>
+        </div>
+
+        <!-- Collect the nav links, forms, and other content for toggling -->
+        <div id="huxblog_navbar">
+            <div class="navbar-collapse">
+                <ul class="nav navbar-nav navbar-right">
+                    <li>
+                        <a href="/">首页</a>
+                    </li>
+                    
+                    
+                    
+                    
+                    <li>
+                        
+                            <a href="/about/">关于</a>
+                        
+                    </li>
+                    
+                    
+                    
+                    <li>
+                        
+                        <a href="/archive/">归档</a>
+                        
+                    </li>
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                </ul>
+            </div>
+        </div>
+        <!-- /.navbar-collapse -->
+    </div>
+    <!-- /.container -->
+</nav>
+<div class="floating-tools edge-right is-collapsed" data-floating-tools>
+    <button class="floating-tools-handle" type="button" data-floating-tools-toggle aria-expanded="false" aria-label="展开快捷工具，可拖动调整位置" title="点击展开，拖动调整位置">
+    </button>
+    <div class="floating-tools-panel">
+        <a class="floating-tool floating-home-button" href="/" aria-label="首页" title="首页">
+            <svg class="floating-nav-icon" viewBox="0 0 20 20" aria-hidden="true">
+                <path d="m3 9.5 7-6 7 6"></path>
+                <path d="M5.5 8.5V17h9V8.5M8.5 17v-4.5h3V17"></path>
+            </svg>
+            <span class="floating-tool-label">首页</span>
+        </a>
+        <a class="floating-tool floating-about-button" href="/about/" aria-label="关于" title="关于">
+            <svg class="floating-nav-icon" viewBox="0 0 20 20" aria-hidden="true">
+                <circle cx="10" cy="6.5" r="3"></circle>
+                <path d="M4.5 17c.45-3.15 2.3-4.75 5.5-4.75s5.05 1.6 5.5 4.75"></path>
+            </svg>
+            <span class="floating-tool-label">关于</span>
+        </a>
+        <a class="floating-tool floating-archive-button" href="/archive/" aria-label="归档" title="归档">
+            <svg class="floating-nav-icon" viewBox="0 0 20 20" aria-hidden="true">
+                <path d="M3 5.5h14V17H3zM2.5 3h15v3h-15zM8 9.5h4"></path>
+            </svg>
+            <span class="floating-tool-label">归档</span>
+        </a>
+        <button class="floating-tool floating-search-button" type="button" data-search-open aria-label="打开文章搜索" title="搜索">
+            <svg class="floating-search-icon" viewBox="0 0 24 24" aria-hidden="true">
+                <circle cx="11" cy="11" r="6.5"></circle>
+                <path d="m16 16 4 4"></path>
+            </svg>
+            <span class="floating-tool-label">搜索</span>
+        </button>
+        <button class="floating-tool theme-switcher" type="button" data-theme-toggle aria-live="polite">
+            <span class="theme-switcher-icon" data-theme-icon aria-hidden="true">◐</span>
+            <span class="floating-tool-label" data-theme-label>经典</span>
+        </button>
+    </div>
+</div>
+<script>
+    // Drop Bootstarp low-performance Navbar
+    // Use customize navbar with high-quality material design animation
+    // in high-perf jank-free CSS3 implementation
+    var $body   = document.body;
+    var $toggle = document.querySelector('.navbar-toggle');
+    var $navbar = document.querySelector('#huxblog_navbar');
+    var $collapse = document.querySelector('.navbar-collapse');
+
+    var __HuxNav__ = {
+        close: function(){
+            $navbar.className = " ";
+            // wait until animation end.
+            setTimeout(function(){
+                // prevent frequently toggle
+                if($navbar.className.indexOf('in') < 0) {
+                    $collapse.style.height = "0px"
+                }
+            },400)
+        },
+        open: function(){
+            $collapse.style.height = "auto"
+            $navbar.className += " in";
+        }
+    }
+
+    // Bind Event
+    $toggle.addEventListener('click', function(e){
+        if ($navbar.className.indexOf('in') > 0) {
+            __HuxNav__.close()
+        }else{
+            __HuxNav__.open()
+        }
+    })
+
+    /**
+     * Since Fastclick is used to delegate 'touchstart' globally
+     * to hack 300ms delay in iOS by performing a fake 'click',
+     * Using 'e.stopPropagation' to stop 'touchstart' event from 
+     * $toggle/$collapse will break global delegation.
+     * 
+     * Instead, we use a 'e.target' filter to prevent handler
+     * added to document close HuxNav.  
+     *
+     * Also, we use 'click' instead of 'touchstart' as compromise
+     */
+    document.addEventListener('click', function(e){
+        if(e.target == $toggle) return;
+        if(e.target.className == 'icon-bar') return;
+        __HuxNav__.close();
+    })
+</script>
+
+    <div class="blog-search" data-blog-search data-index-url="/search.json" hidden>
+    <div class="blog-search-backdrop" data-search-close></div>
+    <section class="blog-search-dialog" role="dialog" aria-modal="true" aria-labelledby="blog-search-title">
+        <h2 class="sr-only" id="blog-search-title">搜索文章</h2>
+        <div class="blog-search-input-row">
+            <svg class="blog-search-icon" viewBox="0 0 24 24" aria-hidden="true">
+                <circle cx="11" cy="11" r="6.5"></circle>
+                <path d="m16 16 4 4"></path>
+            </svg>
+            <input
+                class="blog-search-input"
+                type="search"
+                inputmode="search"
+                autocomplete="off"
+                spellcheck="false"
+                placeholder="搜索标题、标签或文章内容"
+                aria-label="搜索文章"
+                aria-controls="blog-search-results"
+            >
+            <button class="blog-search-close" type="button" data-search-close aria-label="关闭搜索">×</button>
+        </div>
+        <div class="blog-search-status" data-search-status aria-live="polite">输入关键词开始搜索</div>
+        <div class="blog-search-results" id="blog-search-results" data-search-results role="listbox"></div>
+        <div class="blog-search-help" aria-hidden="true">
+            <span><kbd>↑</kbd><kbd>↓</kbd> 选择</span>
+            <span><kbd>Enter</kbd> 打开</span>
+            <span><kbd>Esc</kbd> 关闭</span>
+        </div>
+    </section>
+</div>
+
+
+    <!-- Image to hack wechat -->
+<!-- <img src="/img/icon_wechat.png" width="0" height="0"> -->
+<!-- <img src="/img/home-bg.jpg" width="0" height="0"> -->
+
+<!-- Post Header -->
+
+
+
+<style type="text/css">
+    header.intro-header{
+        position: relative;
+        background-image: url('/img/home-bg.jpg');
+        background: ;
+    }
+
+    
+</style>
+
+<header class="intro-header" >
+
+    <div class="header-mask"></div>
+    
+    <div class="container">
+        <div class="row">
+            <div class="col-lg-8 col-lg-offset-2 col-md-10 col-md-offset-1">
+                <div class="post-heading">
+                    <div class="tags">
+                        
+                        <a class="tag" href="/archive/?tag=MySQL" title="MySQL">MySQL</a>
+                        
+                        <a class="tag" href="/archive/?tag=%E6%97%A5%E5%B8%B8%E8%AE%B0%E5%BD%95" title="日常记录">日常记录</a>
+                        
+                    </div>
+                    <h1>MySQL中Explain总结</h1>
+                    
+                    <h2 class="subheading"></h2>
+                    <span class="meta post-meta-line">
+                        Posted by jamie Blog on 2019-06-14
+                        <span class="post-meta-separator" aria-hidden="true">·</span>
+                        <span class="post-view-count" aria-label="文章阅读量">阅读 <span id="busuanzi_page_pv">--</span> 次</span>
+                    </span>
+                </div>
+            </div>
+        </div>
+    </div>
+</header>
+
+
+
+
+
+
+
+<!-- Post Content -->
+<article>
+    <div class="container">
+        <div class="row">
+
+    <!-- Post Container -->
+            <div class="
+                col-lg-8 col-lg-offset-2
+                col-md-10 col-md-offset-1
+                post-container">
+
+                <!-- Multi-Lingual -->
+                
+
+				<h3 id="1背景">1.背景</h3>
+
+<p>在工作中，经常会用到explain来检查sql的执行计划，平时关注的也是几个指标，今天做一个总结，把所有指标列举出来，方便以后查看。</p>
+
+<p>Explain 可以使用在SELECT, DELETE, INSERT, REPLACE, and UPDATE 语句中，执行的结果会在每一行显示用到的每一个表的详细信息。简单语句可能结果就只有一行，但是复杂的查询语句会有很多行数据。</p>
+
+<h3 id="2explain-的使用">2.Explain 的使用</h3>
+
+<p>在 SQL 语句前面加上 explain，如：EXPLAIN SELECT * FROM a;</p>
+
+<p>举个例子</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code><table class="rouge-table"><tbody><tr><td class="rouge-gutter gl"><pre class="lineno">1
+2
+3
+4
+5
+6
+</pre></td><td class="rouge-code"><pre>CREATE TABLE `a` (
+  `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
+  `uid` int(10) unsigned DEFAULT NULL,
+  PRIMARY KEY (`id`),
+  KEY `idx_uid` (`uid`) USING BTREE
+) ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=utf8;
+</pre></td></tr></tbody></table></code></pre></div></div>
+
+<p>采用上面的语句EXPLAIN SELECT * FROM a;，效果如下</p>
+
+<p>通过图片我们可以看到执行过后会输出 12 个字段，那么每个字段是什么意思呢？我们来一一看下</p>
+
+<h3 id="3explain-输出的字段内容">3.Explain 输出的字段内容</h3>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code><table class="rouge-table"><tbody><tr><td class="rouge-gutter gl"><pre class="lineno">1
+</pre></td><td class="rouge-code"><pre>id, select_type, table, partitions, type, possible_keys, key, key_len, ref, rows,filtered,extra
+</pre></td></tr></tbody></table></code></pre></div></div>
+<p><img src="/images/mysql/03.png" alt="" /></p>
+
+<h4 id="1id-是用来顺序标识整个查询中-select-语句的在嵌套查询中id越大的语句越先执行">1.id: 是用来顺序标识整个查询中 select 语句的，在嵌套查询中id越大的语句越先执行</h4>
+<h4 id="2select_type">2.select_type:</h4>
+
+<ul>
+  <li>simple: 简单的SELECT（不使用UNION或子查询）</li>
+  <li>primary: 最外面的SELECT</li>
+  <li>union: UNION中的第二个或更高的SELECT语句</li>
+  <li>dependent union: UNION中的第二个或更高的SELECT语句，取决于外部查询</li>
+  <li>union result: UNION的结果</li>
+  <li>subquery: 在子查询中首先选择SELECT</li>
+  <li>dependent subquery: 子查询中的第一个SELECT，取决于外部查询</li>
+  <li>derived: 派生表——该临时表是从子查询派生出来的，位于from中的子查询</li>
+  <li>uncacheable subquery: 无法缓存结果的子查询，必须为外部查询的每一行重新计算</li>
+  <li>uncacheable union: 在UNION中的第二个或更晚的选择属于不可缓存的子查询</li>
+</ul>
+
+<h4 id="3table-每一行引用的表名">3.table: 每一行引用的表名</h4>
+<h4 id="4type-从上到下效果依次降低">4.type: 从上到下效果依次降低</h4>
+
+<ul>
+  <li>system: const 的一种特例，表中只有一行数据</li>
+  <li>const: 当确定最多只会有一行匹配的时候，MySQL优化器会在查询前读取它而且只读取一次，因此非常快。使用主键查询往往就是 const 级别的，非常高效</li>
+  <li>eq_ref: 最多只返回一条符合条件的记录，通过使用在两个表有关联字段的时候</li>
+  <li>ref: 通过普通索引查询匹配的很多行时的类型</li>
+  <li>fulltext: 全文索引</li>
+  <li>ref_or_null: 跟 ref 类似的效果，不过多一个列不能 null 的条件</li>
+  <li>index_merge: 此连接类型表示使用了索引合并优化。在这种情况下，输出行中的 key 列包含使用的索引列表，key_len包含所用索引的最长 key 部分列表</li>
+  <li>unique_subquery: 在使用 in 查询的情况下会取代 eq_ref</li>
+  <li>range: 范围扫描，一个有限制的索引扫描。key 列显示使用了哪个索引。当使用=、 &lt;&gt;、&gt;、&gt;=、&lt;、&lt;=、IS NULL、&lt;=&gt;、BETWEEN 或者 IN 操作符，用常量比较关键字列时,可以使用 range</li>
+  <li>index: 类似全表扫描，只是扫描表的时候按照索引次序进行而不是行。主要优点就是避免了排序, 但是开销仍然非常大。如在Extra列看到Using index，说明正在使用覆盖索引，只扫描索引的数据，它比按索引次序全表扫描的开销要小很多</li>
+  <li>ALL: 全表扫描</li>
+</ul>
+
+<h4 id="5possible_key-mysql-可能采用的索引但是并不一定使用">5.possible_key: MySQL 可能采用的索引，但是并不一定使用</h4>
+<h4 id="6key-mysql-正真使用的索引名称">6.key: MySQL 正真使用的索引名称</h4>
+<h4 id="7rows-预估的扫描行数只能参考不准确">7.rows: 预估的扫描行数，只能参考不准确</h4>
+<h4 id="8extra-该列包含了很多额外的信息包括是否文件排序是否有临时表等很多时候这个字段很有用能提供很多信息">8.extra: 该列包含了很多额外的信息，包括是否文件排序，是否有临时表等，很多时候这个字段很有用能提供很多信息</h4>
+
+<h3 id="5小结">5.小结</h3>
+
+<p>平时工作做好总结也是一种学习，更是一种态度！</p>
+
+
+                <hr style="visibility: hidden;">
+                <ul class="pager">
+
+
+                    
+                    <li class="next">
+                        <a href="/blog/2019/06/01/docker%E5%AD%A6%E4%B9%A0%E7%AC%94%E8%AE%B0/" data-toggle="tooltip" data-placement="top" title="docker学习笔记">
+                        下一篇<br>
+                        <span>docker学习笔记</span>
+                        </a>
+                    </li>
+                    
+
+                    
+                    <li class="previous">
+                        <a href="/blog/2019/07/10/%E6%88%91%E6%83%B3%E5%9C%A8%E9%A1%B9%E7%9B%AE%E5%90%AF%E5%8A%A8%E5%90%8E-%E4%B8%8B%E7%BA%BF%E5%89%8D%E5%81%9A%E4%BA%9B%E4%BA%8B%E5%84%BF/" data-toggle="tooltip" data-placement="top" title="我想在项目启动后，下线前做些事儿">
+                            上一篇<br>
+                            <span>我想在项目启动后，下线前做些事儿</span>
+                        </a>
+                    </li>
+                    
+
+                </ul>
+                <hr style="visibility: hidden;">
+
+            </div>  
+
+    <!-- Side Catalog Container -->
+        
+            <div class="
+                col-lg-2 col-lg-offset-0
+                visible-lg-block
+                sidebar-container
+                catalog-container">
+                <div class="side-catalog">
+                    <hr class="hidden-sm hidden-xs">
+                    <h5>
+                        <a class="catalog-toggle" href="#">目录</a>
+                    </h5>
+                    <ul class="catalog-body"></ul>
+                </div>
+            </div>
+        
+
+    <!-- Sidebar Container -->
+            <div class="
+                col-lg-8 col-lg-offset-2
+                col-md-10 col-md-offset-1
+                sidebar-container">
+
+                <!-- Featured Tags -->
+                
+
+
+<section>
+    
+        <hr class="hidden-sm hidden-xs">
+    
+    <h5><a href="/archive/">归档</a></h5>
+    <div class="tags">
+        
+        
+        
+        </a>
+        
+        
+                <a data-sort="0099" 
+                    href="/archive/?tag=java"
+                    title="java"
+                    rel="10">java</a>
+        
+                <a data-sort="0060" 
+                    href="/archive/?tag=%E6%97%A5%E5%B8%B8%E8%AE%B0%E5%BD%95"
+                    title="日常记录"
+                    rel="49">日常记录</a>
+        
+                <a data-sort="0097" 
+                    href="/archive/?tag=MySQL"
+                    title="MySQL"
+                    rel="12">MySQL</a>
+        
+                <a data-sort="0101" 
+                    href="/archive/?tag=%E5%A4%9A%E7%BA%BF%E7%A8%8B"
+                    title="多线程"
+                    rel="8">多线程</a>
+        
+                <a data-sort="0102" 
+                    href="/archive/?tag=Spring"
+                    title="Spring"
+                    rel="7">Spring</a>
+        
+                <a data-sort="0105" 
+                    href="/archive/?tag=%E8%AE%BE%E8%AE%A1%E6%A8%A1%E5%BC%8F"
+                    title="设计模式"
+                    rel="4">设计模式</a>
+        
+                <a data-sort="0105" 
+                    href="/archive/?tag=Redis"
+                    title="Redis"
+                    rel="4">Redis</a>
+        
+                <a data-sort="0105" 
+                    href="/archive/?tag=SpringBoot"
+                    title="SpringBoot"
+                    rel="4">SpringBoot</a>
+        
+                <a data-sort="0105" 
+                    href="/archive/?tag=Zookeeper"
+                    title="Zookeeper"
+                    rel="4">Zookeeper</a>
+        
+                <a data-sort="0106" 
+                    href="/archive/?tag=%E5%BE%AE%E6%9C%8D%E5%8A%A1"
+                    title="微服务"
+                    rel="3">微服务</a>
+        
+                <a data-sort="0106" 
+                    href="/archive/?tag=%E7%AE%97%E6%B3%95"
+                    title="算法"
+                    rel="3">算法</a>
+        
+                <a data-sort="0106" 
+                    href="/archive/?tag=Docker"
+                    title="Docker"
+                    rel="3">Docker</a>
+        
+                <a data-sort="0107" 
+                    href="/archive/?tag=%E5%B7%A5%E4%BD%9C%E9%A1%B9%E7%9B%AE%E6%80%9D%E8%80%83"
+                    title="工作项目思考"
+                    rel="2">工作项目思考</a>
+        
+                <a data-sort="0107" 
+                    href="/archive/?tag=%E7%BA%BF%E4%B8%8A%E4%BA%8B%E6%95%85"
+                    title="线上事故"
+                    rel="2">线上事故</a>
+        
+                <a data-sort="0107" 
+                    href="/archive/?tag=ChatGPT"
+                    title="ChatGPT"
+                    rel="2">ChatGPT</a>
+        
+                <a data-sort="0107" 
+                    href="/archive/?tag=Java"
+                    title="Java"
+                    rel="2">Java</a>
+        
+                <a data-sort="0107" 
+                    href="/archive/?tag=MQTT"
+                    title="MQTT"
+                    rel="2">MQTT</a>
+        
+                <a data-sort="0107" 
+                    href="/archive/?tag=MyBatis"
+                    title="MyBatis"
+                    rel="2">MyBatis</a>
+        
+                <a data-sort="0107" 
+                    href="/archive/?tag=NIO"
+                    title="NIO"
+                    rel="2">NIO</a>
+        
+                <a data-sort="0107" 
+                    href="/archive/?tag=Netty"
+                    title="Netty"
+                    rel="2">Netty</a>
+        
+                <a data-sort="0107" 
+                    href="/archive/?tag=SpringCloud"
+                    title="SpringCloud"
+                    rel="2">SpringCloud</a>
+        
+                <a data-sort="0107" 
+                    href="/archive/?tag=SpringCloud-GateWay"
+                    title="SpringCloud-GateWay"
+                    rel="2">SpringCloud-GateWay</a>
+        
+                <a data-sort="0107" 
+                    href="/archive/?tag=k8s"
+                    title="k8s"
+                    rel="2">k8s
+    </div>
+</section>
+
+
+                <!-- Friends Blog -->
+<!--                -->
+            </div>
+        </div>
+    </div>
+</article>
+
+<!-- add support for mathjax by voleking-->
+
+
+
+<!-- Page-view counter: Busuanzi does not accept localhost or 127.0.0.1. -->
+<script src="https://cdn.busuanzi.cc/busuanzi/3.6.9/busuanzi.min.js" defer></script>
+
+
+
+
+
+<!-- async load function -->
+<script>
+    function async(u, c) {
+      var d = document, t = 'script',
+          o = d.createElement(t),
+          s = d.getElementsByTagName(t)[0];
+      o.src = u;
+      if (c) { o.addEventListener('load', function (e) { c(null, e); }, false); }
+      s.parentNode.insertBefore(o, s);
+    }
+</script>
+<!-- anchor-js, Doc:http://bryanbraun.github.io/anchorjs/ -->
+<script>
+    async("//cdnjs.cloudflare.com/ajax/libs/anchor-js/1.1.1/anchor.min.js",function(){
+        anchors.options = {
+          visible: 'always',
+          placement: 'right',
+          icon: '#'
+        };
+        anchors.add().remove('.intro-header h1').remove('.subheading').remove('.sidebar-container h5');
+    })
+</script>
+<style>
+    /* place left on bigger screen */
+    @media all and (min-width: 800px) {
+        .anchorjs-link{
+            position: absolute;
+            left: -0.75em;
+            font-size: 1.1em;
+            margin-top : -0.1em;
+        }
+    }
+</style>
+
+
+
+    <!-- Footer -->
+<footer>
+    <div class="container">
+        <div class="row">
+            <div class="col-lg-8 col-lg-offset-2 col-md-10 col-md-offset-1">
+                <!-- &lt;!&ndash; SNS Link &ndash;&gt;
+                
+
+
+<ul class="list-inline text-center">
+
+
+  
+
+</ul> -->
+
+                <p class="copyright text-muted">
+                    <!-- Copyright &copy; jamie Blog 2026
+                    <br> -->
+                    Copyright &copy; 2016–2026 jamie Blog<br>
+                    Powered by <a href="/about/">jamie</a>
+               </p>
+           </div>
+       </div>
+   </div>
+</footer>
+
+<!-- jQuery -->
+<script src="/js/jquery.min.js "></script>
+
+<!-- Bootstrap Core JavaScript -->
+<!-- Currently, only navbar scroll-down effect at desktop still depends on this -->
+<script src="/js/bootstrap.min.js "></script>
+
+<!-- Custom Theme JavaScript -->
+<script src="/js/hux-blog.min.js "></script>
+<script src="/js/blog-search.js"></script>
+
+
+<!-- Article image preview -->
+<script src="/js/post-image-preview.js"></script>
+
+
+<!-- Service Worker -->
+
+<script src="/js/snackbar.js "></script>
+<script src="/js/sw-registration.js "></script>
+
+
+
+
+<!-- async load function -->
+<script>
+    function async(u, c) {
+      var d = document, t = 'script',
+          o = d.createElement(t),
+          s = d.getElementsByTagName(t)[0];
+      o.src = u;
+      if (c) { o.addEventListener('load', function (e) { c(null, e); }, false); }
+      s.parentNode.insertBefore(o, s);
+    }
+</script>
+
+<!--
+     Because of the native support for backtick-style fenced code blocks
+     right within the Markdown is landed in Github Pages,
+     From V1.6, There is no need for Highlight.js,
+     so Huxblog drops it officially.
+
+     - https://github.com/blog/2100-github-pages-now-faster-and-simpler-with-jekyll-3-0
+     - https://help.github.com/articles/creating-and-highlighting-code-blocks/
+     - https://github.com/jneen/rouge/wiki/list-of-supported-languages-and-lexers
+-->
+<!--
+    <script>
+        async("http://cdn.bootcss.com/highlight.js/8.6/highlight.min.js", function(){
+            hljs.initHighlightingOnLoad();
+        })
+    </script>
+    <link href="http://cdn.bootcss.com/highlight.js/8.6/styles/github.min.css" rel="stylesheet">
+-->
+
+
+
+
+
+<!--fastClick.js -->
+<!-- <script>
+    async("//cdnjs.cloudflare.com/ajax/libs/fastclick/1.0.6/fastclick.min.js", function(){
+        var $nav = document.querySelector("nav");
+        if($nav) FastClick.attach($nav);
+    })
+</script> -->
+
+
+<!-- Google Analytics -->
+
+<script>
+    // dynamic User by Hux
+    var _gaId = 'UA-49627206-1';
+    var _gaDomain = 'jamie.me';
+
+    // Originial
+    (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+    (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+    m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+    });
+    // (window,document,'script','//www.google-analytics.com/analytics.js','ga');
+
+    ga('create', _gaId, _gaDomain);
+    ga('send', 'pageview');
+</script>
+
+
+
+<!-- Baidu Tongji -->
+
+
+
+<!-- Side Catalog -->
+
+<script type="text/javascript">
+    function generateCatalog (selector) {
+
+        // interop with multilangual 
+        if ('' == 'true') {
+            _containerSelector = 'div.post-container.active'
+        } else {
+            _containerSelector = 'div.post-container'
+        }
+
+        // init
+        var P = $(_containerSelector),a,n,t,l,i,c;
+        a = P.find('h1,h2,h3,h4,h5,h6');
+
+        // clean
+        $(selector).html('')
+
+        // appending
+        a.each(function () {
+            n = $(this).prop('tagName').toLowerCase();
+            i = "#"+$(this).prop('id');
+            t = $(this).text();
+            c = $('<a href="'+i+'" rel="nofollow">'+t+'</a>');
+            l = $('<li class="'+n+'_nav"></li>').append(c);
+            $(selector).append(l);
+        });
+        return true;
+    }
+
+    generateCatalog(".catalog-body");
+
+    // toggle side catalog
+    $(".catalog-toggle").click((function(e){
+        e.preventDefault();
+        $('.side-catalog').toggleClass("fold")
+    }))
+
+    /*
+     * Doc: https://github.com/davist11/jQuery-One-Page-Nav
+     * Fork by Hux to support padding
+     */
+    async("/js/jquery.nav.js", function () {
+        $('.catalog-body').onePageNav({
+            currentClass: "active",
+            changeHash: !1,
+            easing: "swing",
+            filter: "",
+            scrollSpeed: 700,
+            scrollOffset: 0,
+            scrollThreshold: .2,
+            begin: null,
+            end: null,
+            scrollChange: null,
+            padding: 80
+        });
+    });
+</script>
+
+
+
+<!-- Multi-Lingual -->
+
+
+
+
+<!-- Image to hack wechat -->
+<!--<img src="/img/icon_wechat.png" width="0" height="0" />-->
+<!-- Migrate from head to bottom, no longer block render and still work -->
+
+</body>
+
+</html>

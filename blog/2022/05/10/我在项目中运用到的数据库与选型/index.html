@@ -1,0 +1,937 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="baidu-site-verification" content="code-8XHgqNvUKa" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+    <meta name="description" content="关于后端程序设计 | 这里是 jamie 的个人博客。">
+    <meta name="keywords"  content="jamie, java, spring, jamie的博客, 博客, 个人网站, 互联网, 后端, jamie's blog">
+    <meta name="theme-color" content="#000000">
+
+    <!-- Apply the saved theme before rendering to avoid a color flash. -->
+    <script>
+        (function () {
+            var theme = null;
+            try {
+                theme = localStorage.getItem('jamie-blog-theme');
+            } catch (error) {}
+
+            if (['classic', 'eye', 'dark'].indexOf(theme) === -1) {
+                theme = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches
+                    ? 'dark'
+                    : 'classic';
+            }
+
+            document.documentElement.setAttribute('data-theme', theme);
+        })();
+    </script>
+    
+    <!-- Open Graph -->
+    <meta property="og:title" content="我在项目中运用到的数据源与选型 - jamie的博客 | jamie Blog">
+    
+    <meta property="og:type" content="article">
+    <meta property="og:description" content="1. 前言
+在项目开发过程中，我所用到的数据库基本如下：MySQL , MongoDB , Elasticsearch , Redis , PostgreSQL。其中关系型数据库就 MySQL 和 PostgreSQL,可以归结为异类，MongoDB , Elasticsearch 是非结构的NoSQL文档型数据库，Redis 是一种非结构化的，高性能的NoSQL数据库。所以按照类型划分，见...">
+    
+    <meta property="article:published_time" content="2022-05-10T00:00:00Z">
+    
+    
+    
+    <meta property="article:tag" content="日常记录">
+    
+    
+    <meta property="og:image" content="https://jinw389-lab.github.io/images/wexin.png">
+    <meta property="og:url" content="https://jinw389-lab.github.io/blog/2022/05/10/%E6%88%91%E5%9C%A8%E9%A1%B9%E7%9B%AE%E4%B8%AD%E8%BF%90%E7%94%A8%E5%88%B0%E7%9A%84%E6%95%B0%E6%8D%AE%E5%BA%93%E4%B8%8E%E9%80%89%E5%9E%8B/">
+    <meta property="og:site_name" content="jamie的博客 | jamie Blog">
+    
+    <title>我在项目中运用到的数据源与选型 - jamie的博客 | jamie Blog</title>
+
+    <!-- Web App Manifest -->
+    <link rel="manifest" href="/pwa/manifest.json">
+
+    <!-- Favicon -->
+    <link rel="shortcut icon" href="/img/logo.jpg">
+    
+    <!-- Canonical URL -->
+    <link rel="canonical" href="https://jinw389-lab.github.io/blog/2022/05/10/%E6%88%91%E5%9C%A8%E9%A1%B9%E7%9B%AE%E4%B8%AD%E8%BF%90%E7%94%A8%E5%88%B0%E7%9A%84%E6%95%B0%E6%8D%AE%E5%BA%93%E4%B8%8E%E9%80%89%E5%9E%8B/">
+
+    <!-- Bootstrap Core CSS -->
+    <link rel="stylesheet" href="/css/bootstrap.min.css">
+
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="/css/hux-blog.min.css">
+    <link rel="stylesheet" href="/css/interaction.css">
+    <link rel="stylesheet" href="/css/themes.css">
+    <link rel="stylesheet" href="/css/search.css">
+    <script src="/js/theme-switcher.js" defer></script>
+
+    <!-- Custom Fonts -->
+    <!-- <link href="http://maxcdn.bootstrapcdn.com/font-awesome/4.3.0/css/font-awesome.min.css" rel="stylesheet" type="text/css"> -->
+    <!-- Hux change font-awesome CDN to qiniu -->
+    <!-- <link href="//cdnjs.cloudflare.com/ajax/libs/font-awesome/4.6.3/css/font-awesome.min.css" rel="stylesheet" type="text/css"> -->
+
+
+    <!-- HTML5 Shim and Respond.js IE8 support of HTML5 elements and media queries -->
+    <!-- WARNING: Respond.js doesn't work if you view the page via file:// -->
+    <!--[if lt IE 9]>
+        <script src="https://oss.maxcdn.com/libs/html5shiv/3.7.0/html5shiv.js"></script>
+        <script src="https://oss.maxcdn.com/libs/respond.js/1.4.2/respond.min.js"></script>
+    <![endif]-->
+
+    <!-- ga & ba script hoook -->
+    <script></script>
+</head>
+
+
+<!-- hack iOS CSS :active style -->
+<body ontouchstart="">
+
+    <!-- Navigation -->
+
+<nav class="navbar navbar-default navbar-custom navbar-fixed-top">
+
+    <div class="container-fluid">
+        <!-- Brand and toggle get grouped for better mobile display -->
+        <div class="navbar-header page-scroll">
+            <button type="button" class="navbar-toggle">
+                <span class="sr-only">Toggle navigation</span>
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+            </button>
+            <a class="navbar-brand" href="/">jamie Blog</a>
+        </div>
+
+        <!-- Collect the nav links, forms, and other content for toggling -->
+        <div id="huxblog_navbar">
+            <div class="navbar-collapse">
+                <ul class="nav navbar-nav navbar-right">
+                    <li>
+                        <a href="/">首页</a>
+                    </li>
+                    
+                    
+                    
+                    
+                    <li>
+                        
+                            <a href="/about/">关于</a>
+                        
+                    </li>
+                    
+                    
+                    
+                    <li>
+                        
+                        <a href="/archive/">归档</a>
+                        
+                    </li>
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                </ul>
+            </div>
+        </div>
+        <!-- /.navbar-collapse -->
+    </div>
+    <!-- /.container -->
+</nav>
+<div class="floating-tools edge-right is-collapsed" data-floating-tools>
+    <button class="floating-tools-handle" type="button" data-floating-tools-toggle aria-expanded="false" aria-label="展开快捷工具，可拖动调整位置" title="点击展开，拖动调整位置">
+    </button>
+    <div class="floating-tools-panel">
+        <a class="floating-tool floating-home-button" href="/" aria-label="首页" title="首页">
+            <svg class="floating-nav-icon" viewBox="0 0 20 20" aria-hidden="true">
+                <path d="m3 9.5 7-6 7 6"></path>
+                <path d="M5.5 8.5V17h9V8.5M8.5 17v-4.5h3V17"></path>
+            </svg>
+            <span class="floating-tool-label">首页</span>
+        </a>
+        <a class="floating-tool floating-about-button" href="/about/" aria-label="关于" title="关于">
+            <svg class="floating-nav-icon" viewBox="0 0 20 20" aria-hidden="true">
+                <circle cx="10" cy="6.5" r="3"></circle>
+                <path d="M4.5 17c.45-3.15 2.3-4.75 5.5-4.75s5.05 1.6 5.5 4.75"></path>
+            </svg>
+            <span class="floating-tool-label">关于</span>
+        </a>
+        <a class="floating-tool floating-archive-button" href="/archive/" aria-label="归档" title="归档">
+            <svg class="floating-nav-icon" viewBox="0 0 20 20" aria-hidden="true">
+                <path d="M3 5.5h14V17H3zM2.5 3h15v3h-15zM8 9.5h4"></path>
+            </svg>
+            <span class="floating-tool-label">归档</span>
+        </a>
+        <button class="floating-tool floating-search-button" type="button" data-search-open aria-label="打开文章搜索" title="搜索">
+            <svg class="floating-search-icon" viewBox="0 0 24 24" aria-hidden="true">
+                <circle cx="11" cy="11" r="6.5"></circle>
+                <path d="m16 16 4 4"></path>
+            </svg>
+            <span class="floating-tool-label">搜索</span>
+        </button>
+        <button class="floating-tool theme-switcher" type="button" data-theme-toggle aria-live="polite">
+            <span class="theme-switcher-icon" data-theme-icon aria-hidden="true">◐</span>
+            <span class="floating-tool-label" data-theme-label>经典</span>
+        </button>
+    </div>
+</div>
+<script>
+    // Drop Bootstarp low-performance Navbar
+    // Use customize navbar with high-quality material design animation
+    // in high-perf jank-free CSS3 implementation
+    var $body   = document.body;
+    var $toggle = document.querySelector('.navbar-toggle');
+    var $navbar = document.querySelector('#huxblog_navbar');
+    var $collapse = document.querySelector('.navbar-collapse');
+
+    var __HuxNav__ = {
+        close: function(){
+            $navbar.className = " ";
+            // wait until animation end.
+            setTimeout(function(){
+                // prevent frequently toggle
+                if($navbar.className.indexOf('in') < 0) {
+                    $collapse.style.height = "0px"
+                }
+            },400)
+        },
+        open: function(){
+            $collapse.style.height = "auto"
+            $navbar.className += " in";
+        }
+    }
+
+    // Bind Event
+    $toggle.addEventListener('click', function(e){
+        if ($navbar.className.indexOf('in') > 0) {
+            __HuxNav__.close()
+        }else{
+            __HuxNav__.open()
+        }
+    })
+
+    /**
+     * Since Fastclick is used to delegate 'touchstart' globally
+     * to hack 300ms delay in iOS by performing a fake 'click',
+     * Using 'e.stopPropagation' to stop 'touchstart' event from 
+     * $toggle/$collapse will break global delegation.
+     * 
+     * Instead, we use a 'e.target' filter to prevent handler
+     * added to document close HuxNav.  
+     *
+     * Also, we use 'click' instead of 'touchstart' as compromise
+     */
+    document.addEventListener('click', function(e){
+        if(e.target == $toggle) return;
+        if(e.target.className == 'icon-bar') return;
+        __HuxNav__.close();
+    })
+</script>
+
+    <div class="blog-search" data-blog-search data-index-url="/search.json" hidden>
+    <div class="blog-search-backdrop" data-search-close></div>
+    <section class="blog-search-dialog" role="dialog" aria-modal="true" aria-labelledby="blog-search-title">
+        <h2 class="sr-only" id="blog-search-title">搜索文章</h2>
+        <div class="blog-search-input-row">
+            <svg class="blog-search-icon" viewBox="0 0 24 24" aria-hidden="true">
+                <circle cx="11" cy="11" r="6.5"></circle>
+                <path d="m16 16 4 4"></path>
+            </svg>
+            <input
+                class="blog-search-input"
+                type="search"
+                inputmode="search"
+                autocomplete="off"
+                spellcheck="false"
+                placeholder="搜索标题、标签或文章内容"
+                aria-label="搜索文章"
+                aria-controls="blog-search-results"
+            >
+            <button class="blog-search-close" type="button" data-search-close aria-label="关闭搜索">×</button>
+        </div>
+        <div class="blog-search-status" data-search-status aria-live="polite">输入关键词开始搜索</div>
+        <div class="blog-search-results" id="blog-search-results" data-search-results role="listbox"></div>
+        <div class="blog-search-help" aria-hidden="true">
+            <span><kbd>↑</kbd><kbd>↓</kbd> 选择</span>
+            <span><kbd>Enter</kbd> 打开</span>
+            <span><kbd>Esc</kbd> 关闭</span>
+        </div>
+    </section>
+</div>
+
+
+    <!-- Image to hack wechat -->
+<!-- <img src="/img/icon_wechat.png" width="0" height="0"> -->
+<!-- <img src="/img/home-bg.jpg" width="0" height="0"> -->
+
+<!-- Post Header -->
+
+
+
+<style type="text/css">
+    header.intro-header{
+        position: relative;
+        background-image: url('/img/home-bg.jpg');
+        background: ;
+    }
+
+    
+</style>
+
+<header class="intro-header" >
+
+    <div class="header-mask"></div>
+    
+    <div class="container">
+        <div class="row">
+            <div class="col-lg-8 col-lg-offset-2 col-md-10 col-md-offset-1">
+                <div class="post-heading">
+                    <div class="tags">
+                        
+                        <a class="tag" href="/archive/?tag=%E6%97%A5%E5%B8%B8%E8%AE%B0%E5%BD%95" title="日常记录">日常记录</a>
+                        
+                    </div>
+                    <h1>我在项目中运用到的数据源与选型</h1>
+                    
+                    <h2 class="subheading"></h2>
+                    <span class="meta post-meta-line">
+                        Posted by jamie Blog on 2022-05-10
+                        <span class="post-meta-separator" aria-hidden="true">·</span>
+                        <span class="post-view-count" aria-label="文章阅读量">阅读 <span id="busuanzi_page_pv">--</span> 次</span>
+                    </span>
+                </div>
+            </div>
+        </div>
+    </div>
+</header>
+
+
+
+
+
+
+
+<!-- Post Content -->
+<article>
+    <div class="container">
+        <div class="row">
+
+    <!-- Post Container -->
+            <div class="
+                col-lg-8 col-lg-offset-2
+                col-md-10 col-md-offset-1
+                post-container">
+
+                <!-- Multi-Lingual -->
+                
+
+				<h3 id="1-前言">1. 前言</h3>
+<p>在项目开发过程中，我所用到的数据库基本如下：<code class="language-plaintext highlighter-rouge">MySQL</code> , <code class="language-plaintext highlighter-rouge">MongoDB</code> , <code class="language-plaintext highlighter-rouge">Elasticsearch</code> , <code class="language-plaintext highlighter-rouge">Redis</code> , <code class="language-plaintext highlighter-rouge">PostgreSQL</code>。其中关系型数据库就 <code class="language-plaintext highlighter-rouge">MySQL</code> 和 <code class="language-plaintext highlighter-rouge">PostgreSQL</code>,可以归结为异类，<code class="language-plaintext highlighter-rouge">MongoDB</code> , <code class="language-plaintext highlighter-rouge">Elasticsearch</code> 是非结构的<code class="language-plaintext highlighter-rouge">NoSQL</code>文档型数据库，<code class="language-plaintext highlighter-rouge">Redis</code> 是一种非结构化的，高性能的<code class="language-plaintext highlighter-rouge">NoSQL</code>数据库。所以按照类型划分，见下面表格。</p>
+
+<table>
+  <thead>
+    <tr>
+      <th>数据库</th>
+      <th>类型</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>MySQL</td>
+      <td>关系型</td>
+    </tr>
+    <tr>
+      <td>PostgreSQL</td>
+      <td>关系型</td>
+    </tr>
+    <tr>
+      <td>MongoDB</td>
+      <td>文档型</td>
+    </tr>
+    <tr>
+      <td>Elasticsearch</td>
+      <td>文档型</td>
+    </tr>
+    <tr>
+      <td>Redis</td>
+      <td>NoSQL</td>
+    </tr>
+  </tbody>
+</table>
+
+<h3 id="2-在工作中的选型">2. 在工作中的选型</h3>
+<h4 id="21-关系型数据库">2.1 关系型数据库</h4>
+<p>在开发一个项目，主要是业务系统，关系型数据库感觉基本上是必不可少的。目前市面上关系型数据库也是非常多，五花八门。但是在做<code class="language-plaintext highlighter-rouge">java</code>的基本都是将<code class="language-plaintext highlighter-rouge">MySQL</code>作为首先，其中有一部分是在中国<code class="language-plaintext highlighter-rouge">it</code>氛围的原因，说白了就是随大流。另一方面是由于运维开发相对简单，碰到问题，网上文章也很丰富，很容易找到解决方案。现在出去找工作，只要你是做<code class="language-plaintext highlighter-rouge">java</code>服务端开发的，感觉<code class="language-plaintext highlighter-rouge">MySQL</code>技术栈那就是必不可少。</p>
+
+<p>那么<code class="language-plaintext highlighter-rouge">MySQL</code>在国内已经默认为关系型数据的首要选择了，我们为啥还选择了 <code class="language-plaintext highlighter-rouge">PostgreSQL</code> 呢? 下面我们来做一个简单的对比。对比完了才会知道他们各自的优劣，根据每个公司的一些具体情况作出合理的抉择。</p>
+
+<h4 id="211-postgresql相对于mysql的优势">2.1.1. PostgreSQL相对于MySQL的优势</h4>
+
+<p>1、在<code class="language-plaintext highlighter-rouge">SQL</code>的标准实现上要比<code class="language-plaintext highlighter-rouge">MySQL</code>完善，而且功能实现比较严谨；</p>
+
+<p>2、存储过程的功能支持要比<code class="language-plaintext highlighter-rouge">MySQL</code>好，具备本地缓存执行计划的能力；</p>
+
+<p>3、对表连接支持较完整，优化器的功能较完整，支持的索引类型很多，复杂查询能力较强；</p>
+
+<p>4、<code class="language-plaintext highlighter-rouge">PostgreSQL</code>主表采用堆表存放，<code class="language-plaintext highlighter-rouge">MySQL</code>采用索引组织表，能够支持比<code class="language-plaintext highlighter-rouge">MySQL</code>更大的数据量。</p>
+
+<p>5、<code class="language-plaintext highlighter-rouge">PostgreSQL</code>的主备复制属于物理复制，相对于<code class="language-plaintext highlighter-rouge">MySQL</code>基于<code class="language-plaintext highlighter-rouge">binlog</code>的逻辑复制，数据的一致性更加可靠，复制性能更高，对主机性能的影响也更小。</p>
+
+<p>6、<code class="language-plaintext highlighter-rouge">MySQL</code>的存储引擎插件化机制，存在锁机制复杂影响并发的问题，而<code class="language-plaintext highlighter-rouge">PostgreSQL</code>不存在。</p>
+
+<h4 id="212-mysql相对于postgresql的优势">2.1.2. MySQL相对于PostgreSQL的优势：</h4>
+
+<p>1、<code class="language-plaintext highlighter-rouge">innodb</code>的基于回滚段实现的<code class="language-plaintext highlighter-rouge">MVCC</code>机制，相对<code class="language-plaintext highlighter-rouge">PostgreSQL</code>新老数据一起存放的基于<code class="language-plaintext highlighter-rouge">XID</code>的<code class="language-plaintext highlighter-rouge">MVCC</code>机制，是占优的。因此<code class="language-plaintext highlighter-rouge">MySQL</code>的速度是高于<code class="language-plaintext highlighter-rouge">PostgreSQL</code>的；</p>
+
+<p>2、<code class="language-plaintext highlighter-rouge">MySQL</code>采用索引组织表，这种存储方式非常适合基于主键匹配的查询、删改操作，但是对表结构设计存在约束；</p>
+
+<p>3、<code class="language-plaintext highlighter-rouge">MySQL</code>的优化器较简单，系统表、运算符、数据类型的实现都很精简，非常适合简单的查询操作；</p>
+
+<p>4、<code class="language-plaintext highlighter-rouge">MySQL</code>分区表的实现要优于<code class="language-plaintext highlighter-rouge">PostgreSQL</code>的基于继承表的分区实现，主要体现在分区个数达到上千上万后的处理性能差异较大。</p>
+
+<p>小结：虽然两数据库在关系型数据库的标准上都有支持，但是在不同功能实现上的区别和实现力度都不太相同。在某些特定的情况下，也存在利弊。</p>
+
+<p>主要整理了上面的几点。而我们之前采用<code class="language-plaintext highlighter-rouge">PostgreSQL</code>就在于我们项目里面会用到一些很特定的SQL函数，来支持业务的查询或操作，若使用<code class="language-plaintext highlighter-rouge">MySQL</code>的话，实现起来就相对要负责得多，其他方面其实在业务上来说，两数据库都没有特别的影响。所以最后采用了 <code class="language-plaintext highlighter-rouge">PostgreSQL</code> 。</p>
+
+<h4 id="22-文档型数据库">2.2 文档型数据库</h4>
+<p>这里主要讨论一下<code class="language-plaintext highlighter-rouge">MongoDB</code>和<code class="language-plaintext highlighter-rouge">Elasticsearch</code>。虽然这两种数据库都是文档型数据库。但是区别确实非常大的。</p>
+
+<table>
+  <thead>
+    <tr>
+      <th>指标</th>
+      <th>MongoDB</th>
+      <th>Elasticsearch</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>编写语言</td>
+      <td>c++</td>
+      <td>java</td>
+    </tr>
+    <tr>
+      <td>客户端操作方式</td>
+      <td>专门的驱动driver</td>
+      <td>RESTFul接口</td>
+    </tr>
+    <tr>
+      <td>操作语句</td>
+      <td>专门的复杂语句，学习成本高</td>
+      <td>专门的复杂语句，学习成本高</td>
+    </tr>
+    <tr>
+      <td>分片方式</td>
+      <td>hash和range</td>
+      <td>hash</td>
+    </tr>
+    <tr>
+      <td>分布式</td>
+      <td>由“前置查询路由+配置服务+shard集合”，需要手动配置集群服务</td>
+      <td>天然分布式</td>
+    </tr>
+    <tr>
+      <td>内部存储方式</td>
+      <td> </td>
+      <td>到排索引+docvalues+fielddata</td>
+    </tr>
+    <tr>
+      <td>索引</td>
+      <td>手动建立索引</td>
+      <td>所有字段自动建立索引</td>
+    </tr>
+    <tr>
+      <td>全文检索</td>
+      <td>全文检索字段个数有限制</td>
+      <td>强大的分析器且可以灵活组合，查询时智能匹配</td>
+    </tr>
+    <tr>
+      <td>数据安全性</td>
+      <td>理论上，没有数据丢失</td>
+      <td>非实时，存在数据丢失风险</td>
+    </tr>
+    <tr>
+      <td>大数据查询性能上</td>
+      <td>很高</td>
+      <td>非常高</td>
+    </tr>
+  </tbody>
+</table>
+
+<p>以上是我这边整理的一些关键信息的对比。基于我们公司业务的需求，由于公司业务发展，有很多数据存在指数型递增，我们采用<code class="language-plaintext highlighter-rouge">MongoDB</code>+分表的方式进行存储，并且这些数据是安全性要求高，所以在排除了<code class="language-plaintext highlighter-rouge">MySQL</code>的前提下，首选的就是<code class="language-plaintext highlighter-rouge">MongoDB</code>。</p>
+
+<p>报表统计相关，采用的是<code class="language-plaintext highlighter-rouge">Elasticsearch</code>。这一点也是基于<code class="language-plaintext highlighter-rouge">Elasticsearch</code>的全文检索性能上的考虑，但是<code class="language-plaintext highlighter-rouge">Elasticsearch</code>在聚合上面的性能貌似并不是特别高，所以我们在<code class="language-plaintext highlighter-rouge">Elasticsearch</code>中存储的是初步聚合统计的数据，然后业务上根据具体情况在做二次聚合查询。这样在比较复杂的查询情况下，也能保证查询性能非常高。</p>
+
+<h4 id="23-redis">2.3 Redis</h4>
+<p>感觉这块基本没啥可说的呢，在<code class="language-plaintext highlighter-rouge">Redis</code>适用领域，基本上算是标杆了,前几年可能还会提到<code class="language-plaintext highlighter-rouge">memercache</code>,也是由于他不支持复杂的数据结构，外加不支持持久化，被<code class="language-plaintext highlighter-rouge">Redis</code>打压得没有一席之地。</p>
+
+<p>我们项目上<code class="language-plaintext highlighter-rouge">Redis</code>主要用于缓存来增加查询性能，登陆用户的基本信息与权限，分布式锁，还有自研多任务队列组件，这个在之前文章中有提到。</p>
+
+<h3 id="3-总结">3. 总结</h3>
+<p>本篇文章是这几年工作以来，对于使用到的数据库的一个全面汇总，并分类进行对比。以及项目上如何根据具体情况来选型。</p>
+
+
+                <hr style="visibility: hidden;">
+                <ul class="pager">
+
+
+                    
+                    <li class="next">
+                        <a href="/blog/2022/05/09/MongoDB-4.0-VS-4.2/" data-toggle="tooltip" data-placement="top" title="MongoDB 4.0 VS 4.2">
+                        下一篇<br>
+                        <span>MongoDB 4.0 VS 4.2</span>
+                        </a>
+                    </li>
+                    
+
+                    
+                    <li class="previous">
+                        <a href="/blog/2022/05/11/JAVA%E4%B8%AD%E7%BA%BF%E7%A8%8B%E7%9A%84%E7%94%9F%E5%91%BD%E5%91%A8%E6%9C%9F/" data-toggle="tooltip" data-placement="top" title="JAVA中线程的生命周期">
+                            上一篇<br>
+                            <span>JAVA中线程的生命周期</span>
+                        </a>
+                    </li>
+                    
+
+                </ul>
+                <hr style="visibility: hidden;">
+
+            </div>  
+
+    <!-- Side Catalog Container -->
+        
+            <div class="
+                col-lg-2 col-lg-offset-0
+                visible-lg-block
+                sidebar-container
+                catalog-container">
+                <div class="side-catalog">
+                    <hr class="hidden-sm hidden-xs">
+                    <h5>
+                        <a class="catalog-toggle" href="#">目录</a>
+                    </h5>
+                    <ul class="catalog-body"></ul>
+                </div>
+            </div>
+        
+
+    <!-- Sidebar Container -->
+            <div class="
+                col-lg-8 col-lg-offset-2
+                col-md-10 col-md-offset-1
+                sidebar-container">
+
+                <!-- Featured Tags -->
+                
+
+
+<section>
+    
+        <hr class="hidden-sm hidden-xs">
+    
+    <h5><a href="/archive/">归档</a></h5>
+    <div class="tags">
+        
+        
+        
+        </a>
+        
+        
+                <a data-sort="0099" 
+                    href="/archive/?tag=java"
+                    title="java"
+                    rel="10">java</a>
+        
+                <a data-sort="0060" 
+                    href="/archive/?tag=%E6%97%A5%E5%B8%B8%E8%AE%B0%E5%BD%95"
+                    title="日常记录"
+                    rel="49">日常记录</a>
+        
+                <a data-sort="0097" 
+                    href="/archive/?tag=MySQL"
+                    title="MySQL"
+                    rel="12">MySQL</a>
+        
+                <a data-sort="0101" 
+                    href="/archive/?tag=%E5%A4%9A%E7%BA%BF%E7%A8%8B"
+                    title="多线程"
+                    rel="8">多线程</a>
+        
+                <a data-sort="0102" 
+                    href="/archive/?tag=Spring"
+                    title="Spring"
+                    rel="7">Spring</a>
+        
+                <a data-sort="0105" 
+                    href="/archive/?tag=%E8%AE%BE%E8%AE%A1%E6%A8%A1%E5%BC%8F"
+                    title="设计模式"
+                    rel="4">设计模式</a>
+        
+                <a data-sort="0105" 
+                    href="/archive/?tag=Redis"
+                    title="Redis"
+                    rel="4">Redis</a>
+        
+                <a data-sort="0105" 
+                    href="/archive/?tag=SpringBoot"
+                    title="SpringBoot"
+                    rel="4">SpringBoot</a>
+        
+                <a data-sort="0105" 
+                    href="/archive/?tag=Zookeeper"
+                    title="Zookeeper"
+                    rel="4">Zookeeper</a>
+        
+                <a data-sort="0106" 
+                    href="/archive/?tag=%E5%BE%AE%E6%9C%8D%E5%8A%A1"
+                    title="微服务"
+                    rel="3">微服务</a>
+        
+                <a data-sort="0106" 
+                    href="/archive/?tag=%E7%AE%97%E6%B3%95"
+                    title="算法"
+                    rel="3">算法</a>
+        
+                <a data-sort="0106" 
+                    href="/archive/?tag=Docker"
+                    title="Docker"
+                    rel="3">Docker</a>
+        
+                <a data-sort="0107" 
+                    href="/archive/?tag=%E5%B7%A5%E4%BD%9C%E9%A1%B9%E7%9B%AE%E6%80%9D%E8%80%83"
+                    title="工作项目思考"
+                    rel="2">工作项目思考</a>
+        
+                <a data-sort="0107" 
+                    href="/archive/?tag=%E7%BA%BF%E4%B8%8A%E4%BA%8B%E6%95%85"
+                    title="线上事故"
+                    rel="2">线上事故</a>
+        
+                <a data-sort="0107" 
+                    href="/archive/?tag=ChatGPT"
+                    title="ChatGPT"
+                    rel="2">ChatGPT</a>
+        
+                <a data-sort="0107" 
+                    href="/archive/?tag=Java"
+                    title="Java"
+                    rel="2">Java</a>
+        
+                <a data-sort="0107" 
+                    href="/archive/?tag=MQTT"
+                    title="MQTT"
+                    rel="2">MQTT</a>
+        
+                <a data-sort="0107" 
+                    href="/archive/?tag=MyBatis"
+                    title="MyBatis"
+                    rel="2">MyBatis</a>
+        
+                <a data-sort="0107" 
+                    href="/archive/?tag=NIO"
+                    title="NIO"
+                    rel="2">NIO</a>
+        
+                <a data-sort="0107" 
+                    href="/archive/?tag=Netty"
+                    title="Netty"
+                    rel="2">Netty</a>
+        
+                <a data-sort="0107" 
+                    href="/archive/?tag=SpringCloud"
+                    title="SpringCloud"
+                    rel="2">SpringCloud</a>
+        
+                <a data-sort="0107" 
+                    href="/archive/?tag=SpringCloud-GateWay"
+                    title="SpringCloud-GateWay"
+                    rel="2">SpringCloud-GateWay</a>
+        
+                <a data-sort="0107" 
+                    href="/archive/?tag=k8s"
+                    title="k8s"
+                    rel="2">k8s
+    </div>
+</section>
+
+
+                <!-- Friends Blog -->
+<!--                -->
+            </div>
+        </div>
+    </div>
+</article>
+
+<!-- add support for mathjax by voleking-->
+
+
+
+<!-- Page-view counter: Busuanzi does not accept localhost or 127.0.0.1. -->
+<script src="https://cdn.busuanzi.cc/busuanzi/3.6.9/busuanzi.min.js" defer></script>
+
+
+
+
+
+<!-- async load function -->
+<script>
+    function async(u, c) {
+      var d = document, t = 'script',
+          o = d.createElement(t),
+          s = d.getElementsByTagName(t)[0];
+      o.src = u;
+      if (c) { o.addEventListener('load', function (e) { c(null, e); }, false); }
+      s.parentNode.insertBefore(o, s);
+    }
+</script>
+<!-- anchor-js, Doc:http://bryanbraun.github.io/anchorjs/ -->
+<script>
+    async("//cdnjs.cloudflare.com/ajax/libs/anchor-js/1.1.1/anchor.min.js",function(){
+        anchors.options = {
+          visible: 'always',
+          placement: 'right',
+          icon: '#'
+        };
+        anchors.add().remove('.intro-header h1').remove('.subheading').remove('.sidebar-container h5');
+    })
+</script>
+<style>
+    /* place left on bigger screen */
+    @media all and (min-width: 800px) {
+        .anchorjs-link{
+            position: absolute;
+            left: -0.75em;
+            font-size: 1.1em;
+            margin-top : -0.1em;
+        }
+    }
+</style>
+
+
+
+    <!-- Footer -->
+<footer>
+    <div class="container">
+        <div class="row">
+            <div class="col-lg-8 col-lg-offset-2 col-md-10 col-md-offset-1">
+                <!-- &lt;!&ndash; SNS Link &ndash;&gt;
+                
+
+
+<ul class="list-inline text-center">
+
+
+  
+
+</ul> -->
+
+                <p class="copyright text-muted">
+                    <!-- Copyright &copy; jamie Blog 2026
+                    <br> -->
+                    Copyright &copy; 2016–2026 jamie Blog<br>
+                    Powered by <a href="/about/">jamie</a>
+               </p>
+           </div>
+       </div>
+   </div>
+</footer>
+
+<!-- jQuery -->
+<script src="/js/jquery.min.js "></script>
+
+<!-- Bootstrap Core JavaScript -->
+<!-- Currently, only navbar scroll-down effect at desktop still depends on this -->
+<script src="/js/bootstrap.min.js "></script>
+
+<!-- Custom Theme JavaScript -->
+<script src="/js/hux-blog.min.js "></script>
+<script src="/js/blog-search.js"></script>
+
+
+<!-- Article image preview -->
+<script src="/js/post-image-preview.js"></script>
+
+
+<!-- Service Worker -->
+
+<script src="/js/snackbar.js "></script>
+<script src="/js/sw-registration.js "></script>
+
+
+
+
+<!-- async load function -->
+<script>
+    function async(u, c) {
+      var d = document, t = 'script',
+          o = d.createElement(t),
+          s = d.getElementsByTagName(t)[0];
+      o.src = u;
+      if (c) { o.addEventListener('load', function (e) { c(null, e); }, false); }
+      s.parentNode.insertBefore(o, s);
+    }
+</script>
+
+<!--
+     Because of the native support for backtick-style fenced code blocks
+     right within the Markdown is landed in Github Pages,
+     From V1.6, There is no need for Highlight.js,
+     so Huxblog drops it officially.
+
+     - https://github.com/blog/2100-github-pages-now-faster-and-simpler-with-jekyll-3-0
+     - https://help.github.com/articles/creating-and-highlighting-code-blocks/
+     - https://github.com/jneen/rouge/wiki/list-of-supported-languages-and-lexers
+-->
+<!--
+    <script>
+        async("http://cdn.bootcss.com/highlight.js/8.6/highlight.min.js", function(){
+            hljs.initHighlightingOnLoad();
+        })
+    </script>
+    <link href="http://cdn.bootcss.com/highlight.js/8.6/styles/github.min.css" rel="stylesheet">
+-->
+
+
+
+
+
+<!--fastClick.js -->
+<!-- <script>
+    async("//cdnjs.cloudflare.com/ajax/libs/fastclick/1.0.6/fastclick.min.js", function(){
+        var $nav = document.querySelector("nav");
+        if($nav) FastClick.attach($nav);
+    })
+</script> -->
+
+
+<!-- Google Analytics -->
+
+<script>
+    // dynamic User by Hux
+    var _gaId = 'UA-49627206-1';
+    var _gaDomain = 'jamie.me';
+
+    // Originial
+    (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+    (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+    m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+    });
+    // (window,document,'script','//www.google-analytics.com/analytics.js','ga');
+
+    ga('create', _gaId, _gaDomain);
+    ga('send', 'pageview');
+</script>
+
+
+
+<!-- Baidu Tongji -->
+
+
+
+<!-- Side Catalog -->
+
+<script type="text/javascript">
+    function generateCatalog (selector) {
+
+        // interop with multilangual 
+        if ('' == 'true') {
+            _containerSelector = 'div.post-container.active'
+        } else {
+            _containerSelector = 'div.post-container'
+        }
+
+        // init
+        var P = $(_containerSelector),a,n,t,l,i,c;
+        a = P.find('h1,h2,h3,h4,h5,h6');
+
+        // clean
+        $(selector).html('')
+
+        // appending
+        a.each(function () {
+            n = $(this).prop('tagName').toLowerCase();
+            i = "#"+$(this).prop('id');
+            t = $(this).text();
+            c = $('<a href="'+i+'" rel="nofollow">'+t+'</a>');
+            l = $('<li class="'+n+'_nav"></li>').append(c);
+            $(selector).append(l);
+        });
+        return true;
+    }
+
+    generateCatalog(".catalog-body");
+
+    // toggle side catalog
+    $(".catalog-toggle").click((function(e){
+        e.preventDefault();
+        $('.side-catalog').toggleClass("fold")
+    }))
+
+    /*
+     * Doc: https://github.com/davist11/jQuery-One-Page-Nav
+     * Fork by Hux to support padding
+     */
+    async("/js/jquery.nav.js", function () {
+        $('.catalog-body').onePageNav({
+            currentClass: "active",
+            changeHash: !1,
+            easing: "swing",
+            filter: "",
+            scrollSpeed: 700,
+            scrollOffset: 0,
+            scrollThreshold: .2,
+            begin: null,
+            end: null,
+            scrollChange: null,
+            padding: 80
+        });
+    });
+</script>
+
+
+
+<!-- Multi-Lingual -->
+
+
+
+
+<!-- Image to hack wechat -->
+<!--<img src="/img/icon_wechat.png" width="0" height="0" />-->
+<!-- Migrate from head to bottom, no longer block render and still work -->
+
+</body>
+
+</html>

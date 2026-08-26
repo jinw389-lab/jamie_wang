@@ -1,0 +1,898 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="baidu-site-verification" content="code-8XHgqNvUKa" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+    <meta name="description" content="关于后端程序设计 | 这里是 jamie 的个人博客。">
+    <meta name="keywords"  content="jamie, java, spring, jamie的博客, 博客, 个人网站, 互联网, 后端, jamie's blog">
+    <meta name="theme-color" content="#000000">
+
+    <!-- Apply the saved theme before rendering to avoid a color flash. -->
+    <script>
+        (function () {
+            var theme = null;
+            try {
+                theme = localStorage.getItem('jamie-blog-theme');
+            } catch (error) {}
+
+            if (['classic', 'eye', 'dark'].indexOf(theme) === -1) {
+                theme = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches
+                    ? 'dark'
+                    : 'classic';
+            }
+
+            document.documentElement.setAttribute('data-theme', theme);
+        })();
+    </script>
+    
+    <!-- Open Graph -->
+    <meta property="og:title" content="记录一次Mqtt设备频繁上下线的bug排查 - jamie的博客 | jamie Blog">
+    
+    <meta property="og:type" content="article">
+    <meta property="og:description" content="1. 前言
+
+">
+    
+    <meta property="article:published_time" content="2022-03-21T00:00:00Z">
+    
+    
+    
+    <meta property="article:tag" content="NIO">
+    
+    <meta property="article:tag" content="Netty">
+    
+    <meta property="article:tag" content="MQTT">
+    
+    
+    <meta property="og:image" content="https://jinw389-lab.github.io/images/wexin.png">
+    <meta property="og:url" content="https://jinw389-lab.github.io/blog/2022/03/21/%E8%AE%B0%E5%BD%95%E4%B8%80%E6%AC%A1Mqtt%E8%AE%BE%E5%A4%87%E9%A2%91%E7%B9%81%E4%B8%8A%E4%B8%8B%E7%BA%BF%E7%9A%84bug%E6%8E%92%E6%9F%A5/">
+    <meta property="og:site_name" content="jamie的博客 | jamie Blog">
+    
+    <title>记录一次Mqtt设备频繁上下线的bug排查 - jamie的博客 | jamie Blog</title>
+
+    <!-- Web App Manifest -->
+    <link rel="manifest" href="/pwa/manifest.json">
+
+    <!-- Favicon -->
+    <link rel="shortcut icon" href="/img/logo.jpg">
+    
+    <!-- Canonical URL -->
+    <link rel="canonical" href="https://jinw389-lab.github.io/blog/2022/03/21/%E8%AE%B0%E5%BD%95%E4%B8%80%E6%AC%A1Mqtt%E8%AE%BE%E5%A4%87%E9%A2%91%E7%B9%81%E4%B8%8A%E4%B8%8B%E7%BA%BF%E7%9A%84bug%E6%8E%92%E6%9F%A5/">
+
+    <!-- Bootstrap Core CSS -->
+    <link rel="stylesheet" href="/css/bootstrap.min.css">
+
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="/css/hux-blog.min.css">
+    <link rel="stylesheet" href="/css/interaction.css">
+    <link rel="stylesheet" href="/css/themes.css">
+    <link rel="stylesheet" href="/css/search.css">
+    <script src="/js/theme-switcher.js" defer></script>
+
+    <!-- Custom Fonts -->
+    <!-- <link href="http://maxcdn.bootstrapcdn.com/font-awesome/4.3.0/css/font-awesome.min.css" rel="stylesheet" type="text/css"> -->
+    <!-- Hux change font-awesome CDN to qiniu -->
+    <!-- <link href="//cdnjs.cloudflare.com/ajax/libs/font-awesome/4.6.3/css/font-awesome.min.css" rel="stylesheet" type="text/css"> -->
+
+
+    <!-- HTML5 Shim and Respond.js IE8 support of HTML5 elements and media queries -->
+    <!-- WARNING: Respond.js doesn't work if you view the page via file:// -->
+    <!--[if lt IE 9]>
+        <script src="https://oss.maxcdn.com/libs/html5shiv/3.7.0/html5shiv.js"></script>
+        <script src="https://oss.maxcdn.com/libs/respond.js/1.4.2/respond.min.js"></script>
+    <![endif]-->
+
+    <!-- ga & ba script hoook -->
+    <script></script>
+</head>
+
+
+<!-- hack iOS CSS :active style -->
+<body ontouchstart="">
+
+    <!-- Navigation -->
+
+<nav class="navbar navbar-default navbar-custom navbar-fixed-top">
+
+    <div class="container-fluid">
+        <!-- Brand and toggle get grouped for better mobile display -->
+        <div class="navbar-header page-scroll">
+            <button type="button" class="navbar-toggle">
+                <span class="sr-only">Toggle navigation</span>
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+            </button>
+            <a class="navbar-brand" href="/">jamie Blog</a>
+        </div>
+
+        <!-- Collect the nav links, forms, and other content for toggling -->
+        <div id="huxblog_navbar">
+            <div class="navbar-collapse">
+                <ul class="nav navbar-nav navbar-right">
+                    <li>
+                        <a href="/">首页</a>
+                    </li>
+                    
+                    
+                    
+                    
+                    <li>
+                        
+                            <a href="/about/">关于</a>
+                        
+                    </li>
+                    
+                    
+                    
+                    <li>
+                        
+                        <a href="/archive/">归档</a>
+                        
+                    </li>
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                </ul>
+            </div>
+        </div>
+        <!-- /.navbar-collapse -->
+    </div>
+    <!-- /.container -->
+</nav>
+<div class="floating-tools edge-right is-collapsed" data-floating-tools>
+    <button class="floating-tools-handle" type="button" data-floating-tools-toggle aria-expanded="false" aria-label="展开快捷工具，可拖动调整位置" title="点击展开，拖动调整位置">
+    </button>
+    <div class="floating-tools-panel">
+        <a class="floating-tool floating-home-button" href="/" aria-label="首页" title="首页">
+            <svg class="floating-nav-icon" viewBox="0 0 20 20" aria-hidden="true">
+                <path d="m3 9.5 7-6 7 6"></path>
+                <path d="M5.5 8.5V17h9V8.5M8.5 17v-4.5h3V17"></path>
+            </svg>
+            <span class="floating-tool-label">首页</span>
+        </a>
+        <a class="floating-tool floating-about-button" href="/about/" aria-label="关于" title="关于">
+            <svg class="floating-nav-icon" viewBox="0 0 20 20" aria-hidden="true">
+                <circle cx="10" cy="6.5" r="3"></circle>
+                <path d="M4.5 17c.45-3.15 2.3-4.75 5.5-4.75s5.05 1.6 5.5 4.75"></path>
+            </svg>
+            <span class="floating-tool-label">关于</span>
+        </a>
+        <a class="floating-tool floating-archive-button" href="/archive/" aria-label="归档" title="归档">
+            <svg class="floating-nav-icon" viewBox="0 0 20 20" aria-hidden="true">
+                <path d="M3 5.5h14V17H3zM2.5 3h15v3h-15zM8 9.5h4"></path>
+            </svg>
+            <span class="floating-tool-label">归档</span>
+        </a>
+        <button class="floating-tool floating-search-button" type="button" data-search-open aria-label="打开文章搜索" title="搜索">
+            <svg class="floating-search-icon" viewBox="0 0 24 24" aria-hidden="true">
+                <circle cx="11" cy="11" r="6.5"></circle>
+                <path d="m16 16 4 4"></path>
+            </svg>
+            <span class="floating-tool-label">搜索</span>
+        </button>
+        <button class="floating-tool theme-switcher" type="button" data-theme-toggle aria-live="polite">
+            <span class="theme-switcher-icon" data-theme-icon aria-hidden="true">◐</span>
+            <span class="floating-tool-label" data-theme-label>经典</span>
+        </button>
+    </div>
+</div>
+<script>
+    // Drop Bootstarp low-performance Navbar
+    // Use customize navbar with high-quality material design animation
+    // in high-perf jank-free CSS3 implementation
+    var $body   = document.body;
+    var $toggle = document.querySelector('.navbar-toggle');
+    var $navbar = document.querySelector('#huxblog_navbar');
+    var $collapse = document.querySelector('.navbar-collapse');
+
+    var __HuxNav__ = {
+        close: function(){
+            $navbar.className = " ";
+            // wait until animation end.
+            setTimeout(function(){
+                // prevent frequently toggle
+                if($navbar.className.indexOf('in') < 0) {
+                    $collapse.style.height = "0px"
+                }
+            },400)
+        },
+        open: function(){
+            $collapse.style.height = "auto"
+            $navbar.className += " in";
+        }
+    }
+
+    // Bind Event
+    $toggle.addEventListener('click', function(e){
+        if ($navbar.className.indexOf('in') > 0) {
+            __HuxNav__.close()
+        }else{
+            __HuxNav__.open()
+        }
+    })
+
+    /**
+     * Since Fastclick is used to delegate 'touchstart' globally
+     * to hack 300ms delay in iOS by performing a fake 'click',
+     * Using 'e.stopPropagation' to stop 'touchstart' event from 
+     * $toggle/$collapse will break global delegation.
+     * 
+     * Instead, we use a 'e.target' filter to prevent handler
+     * added to document close HuxNav.  
+     *
+     * Also, we use 'click' instead of 'touchstart' as compromise
+     */
+    document.addEventListener('click', function(e){
+        if(e.target == $toggle) return;
+        if(e.target.className == 'icon-bar') return;
+        __HuxNav__.close();
+    })
+</script>
+
+    <div class="blog-search" data-blog-search data-index-url="/search.json" hidden>
+    <div class="blog-search-backdrop" data-search-close></div>
+    <section class="blog-search-dialog" role="dialog" aria-modal="true" aria-labelledby="blog-search-title">
+        <h2 class="sr-only" id="blog-search-title">搜索文章</h2>
+        <div class="blog-search-input-row">
+            <svg class="blog-search-icon" viewBox="0 0 24 24" aria-hidden="true">
+                <circle cx="11" cy="11" r="6.5"></circle>
+                <path d="m16 16 4 4"></path>
+            </svg>
+            <input
+                class="blog-search-input"
+                type="search"
+                inputmode="search"
+                autocomplete="off"
+                spellcheck="false"
+                placeholder="搜索标题、标签或文章内容"
+                aria-label="搜索文章"
+                aria-controls="blog-search-results"
+            >
+            <button class="blog-search-close" type="button" data-search-close aria-label="关闭搜索">×</button>
+        </div>
+        <div class="blog-search-status" data-search-status aria-live="polite">输入关键词开始搜索</div>
+        <div class="blog-search-results" id="blog-search-results" data-search-results role="listbox"></div>
+        <div class="blog-search-help" aria-hidden="true">
+            <span><kbd>↑</kbd><kbd>↓</kbd> 选择</span>
+            <span><kbd>Enter</kbd> 打开</span>
+            <span><kbd>Esc</kbd> 关闭</span>
+        </div>
+    </section>
+</div>
+
+
+    <!-- Image to hack wechat -->
+<!-- <img src="/img/icon_wechat.png" width="0" height="0"> -->
+<!-- <img src="/img/home-bg.jpg" width="0" height="0"> -->
+
+<!-- Post Header -->
+
+
+
+<style type="text/css">
+    header.intro-header{
+        position: relative;
+        background-image: url('/img/home-bg.jpg');
+        background: ;
+    }
+
+    
+</style>
+
+<header class="intro-header" >
+
+    <div class="header-mask"></div>
+    
+    <div class="container">
+        <div class="row">
+            <div class="col-lg-8 col-lg-offset-2 col-md-10 col-md-offset-1">
+                <div class="post-heading">
+                    <div class="tags">
+                        
+                        <a class="tag" href="/archive/?tag=NIO" title="NIO">NIO</a>
+                        
+                        <a class="tag" href="/archive/?tag=Netty" title="Netty">Netty</a>
+                        
+                        <a class="tag" href="/archive/?tag=MQTT" title="MQTT">MQTT</a>
+                        
+                    </div>
+                    <h1>记录一次Mqtt设备频繁上下线的bug排查</h1>
+                    
+                    <h2 class="subheading"></h2>
+                    <span class="meta post-meta-line">
+                        Posted by jamie Blog on 2022-03-21
+                        <span class="post-meta-separator" aria-hidden="true">·</span>
+                        <span class="post-view-count" aria-label="文章阅读量">阅读 <span id="busuanzi_page_pv">--</span> 次</span>
+                    </span>
+                </div>
+            </div>
+        </div>
+    </div>
+</header>
+
+
+
+
+
+
+
+<!-- Post Content -->
+<article>
+    <div class="container">
+        <div class="row">
+
+    <!-- Post Container -->
+            <div class="
+                col-lg-8 col-lg-offset-2
+                col-md-10 col-md-offset-1
+                post-container">
+
+                <!-- Multi-Lingual -->
+                
+
+				<h3 id="1-前言">1. 前言</h3>
+
+<p>最近一直比较忙，都有一段时间没有更新了。由于今天线上出现了一个很有意思的bug，经过我和同事的辛苦排查，最终将问题定位。下班后，写下这篇博客，以示复盘与警示！！！</p>
+
+<h3 id="2-现象与排查">2. 现象与排查</h3>
+<p>下午嵌入式同事找到我说，线上有个Mqtt设备一直上线，下线，上线，周而复始。
+下面是设备端的日志
+<img src="/images/gzzj/102.png" alt="" />  <br />
+第一个红框中的日志是，设备端向服务端发送了ping消息。  <br />
+第二个红框是，客户端收到了服务端的关闭连接channel事件。   <br />
+第三个红框是，设备主动再次发起连接请求，与服务端创建新的链接。</p>
+
+<p>同事跑来问我，为啥我服务端要将链接主动给关闭掉。
+我反问道：只有这个一个设备吗？还是存在好些设备是如此。
+同事肯定回答道：目前就只有这一个。</p>
+
+<p>我马上去查看线上日志：   <br />
+15:27:38 连接，设备上线。
+<img src="/images/gzzj/103.png" alt="" />  <br />
+15:28:38 服务端接收到ping消息。
+<img src="/images/gzzj/105.png" alt="" />  <br />
+15:31:13 分服务端 <code class="language-plaintext highlighter-rouge">READER_IDLE</code> 事件触发
+<img src="/images/gzzj/104.png" alt="" />  <br />
+该事件由<code class="language-plaintext highlighter-rouge">Netty</code>触发，表示在我们设定的时间内，没有发生读事件，我们这边在这个地方有业务逻辑处理，其中有个步骤就是关闭该连接。
+<img src="/images/gzzj/106.png" alt="" />  <br />
+而这个周期设置是在设备连接的时候，服务端会有一个保活机制，<b>我们设置的是2倍ping的时间（ping的时间是2分钟）</b>
+<img src="/images/gzzj/107.png" alt="" /><br />
+<img src="/images/gzzj/108.png" alt="" />  <br />
+但是我们根据日志得出，在触发消息之前有一次ping消息，是在三分钟之前发生的，也就是说，根本没有到时间，就触发了<code class="language-plaintext highlighter-rouge">READER_IDLE</code> 事件。这个我当时就懵逼了。想了好久也没想出个所以然。
+后面也看了一下后面的日志。</p>
+
+<p><b>发现每隔4分钟就会发生一次改事件</b>
+<img src="/images/gzzj/109.png" alt="" />  <br />
+<img src="/images/gzzj/110.png" alt="" />  <br />
+该现象证明<code class="language-plaintext highlighter-rouge">READER_IDLE</code> 事件的触发是没有问题的。但是这个现象就说不通，那就是在这四分钟之内，明明存在读的事件，这样的话，是不会发生<code class="language-plaintext highlighter-rouge">READER_IDLE</code> 事件。这两个现象存在互相矛盾的情况。</p>
+
+<p>那么该现象有两个原因可以解释：</p>
+<ol>
+  <li>netty bug（否定，因为就只有这一个通道有此现象，其他正常，而且该功能是netty的基础功能之一，若这个存在bug，早就已经被爆出来了）</li>
+  <li>触发<code class="language-plaintext highlighter-rouge">READER_IDLE</code> 事件的通道和创建连接的通道不是同一个通道。为了证明此，我们设了如下实验。</li>
+</ol>
+
+<h3 id="3-设计实验与解决bug">3. 设计实验与解决bug</h3>
+
+<p>为了验证我们的猜想，我们就必须设计实验了证明。</p>
+
+<p><b>实验1:</b>   <br />
+调整设备的ping时间，如由之前的2分钟给改了1分钟，那么就观察一下<code class="language-plaintext highlighter-rouge">READER_IDLE</code> 事件是否会由之前的4分钟触发一次变为2分钟触发一次。若还是4分钟，则证明我的猜想。</p>
+
+<p><b>实验2:</b>   <br />
+直接将设备停掉，观察是否还有<code class="language-plaintext highlighter-rouge">READER_IDLE</code> 事件的发生。这种最直接。</p>
+
+<p>我们最后才去了实验2。
+结果证明了我的猜想：
+<img src="/images/gzzj/113.png" alt="" />  <br />
+可以看到图中，我标记好的地方，也是没4分钟一次日志。</p>
+
+<p>那么问题就明了了，该设备通道存在死连接，我看到这个结果，我也是很疑惑，因为我在代码中有处理这种情况的。</p>
+<h3 id="4-排查代码">4. 排查代码</h3>
+<p>相关的设计图如下
+大致架构图如下
+<img src="/images/gzzj/111.png" alt="" />  <br />
+其中涉及到的缓存以后有机会探讨。</p>
+
+<p>是不是有可能存在这样一种情况，我们假设client002设备存在某种异常，导致设备重新建立了连接。</p>
+
+<p><img src="/images/gzzj/112.png" alt="" /> <br />
+由于channel02通道已经是一个死连接了，4分钟后会触发<code class="language-plaintext highlighter-rouge">READER_IDLE</code>事件，此时从map中就会拿到channel03的通道并将其关闭，然后channel02则一直存活，导致一直触发<code class="language-plaintext highlighter-rouge">READER_IDLE</code>事件。然后设备就会出现频繁被踢下线的现象。</p>
+
+<p>但是我记得之前是处理过这种死链的情况。难不成还存在我没有考虑到的情况。
+我之前的处理死链的逻辑分为两个地方</p>
+<ol>
+  <li>在设备创建了连接后，我会去从缓存中取，通过clientid，若找到有数据，则先close。
+<img src="/images/gzzj/114.png" alt="" /> <br />
+2，触发<code class="language-plaintext highlighter-rouge">READER_IDLE</code>事件,close连接。
+<img src="/images/gzzj/106.png" alt="" /> <br />
+现在很明显，在两个地方就没有close成功。
+那么在这两个地方都close失败的情况，只能是在map缓存中，没有找到数据
+    <div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code><table class="rouge-table"><tbody><tr><td class="rouge-gutter gl"><pre class="lineno">1
+</pre></td><td class="rouge-code"><pre>channelSessionStore.get(clientId);
+</pre></td></tr></tbody></table></code></pre></div>    </div>
+    <p>就是从map中获取channel,没有获取到的时候，则不会有关闭逻辑。
+创建连接的时候，由于只有clientId来判断，是获取不到map中不存在的死链的，只能处理map中存在的死链</p>
+  </li>
+</ol>
+
+<p>那么只能把经历放在，触发<code class="language-plaintext highlighter-rouge">READER_IDLE</code>事件中，因为可以直接拿到当前触发事件的channel。
+<img src="/images/gzzj/115.png" alt="" /> <br />
+<img src="/images/gzzj/116.png" alt="" /> <br />
+图上已经标记了逻辑漏洞所在，那么就好解决了，加上else逻辑，并将<code class="language-plaintext highlighter-rouge">ChannelHandlerContext</code>传入进来。</p>
+
+<h3 id="5-总结">5. 总结</h3>
+<ol>
+  <li>在开发中，尽量考虑到有<code class="language-plaintext highlighter-rouge">if</code>就要兼容到<code class="language-plaintext highlighter-rouge">else</code>的情况。</li>
+  <li>若非必要，慎用缓存。若必须使用的话，则一定要根据实际业务做好数据一致性的考量。</li>
+</ol>
+
+
+                <hr style="visibility: hidden;">
+                <ul class="pager">
+
+
+                    
+                    <li class="next">
+                        <a href="/blog/2022/02/17/%E5%A4%8D%E7%9B%98%E4%B8%80%E4%B8%8B%E8%BF%91%E6%9C%9F%E7%A2%B0%E5%88%B0%E7%9A%84%E7%BA%BF%E4%B8%8A%E9%97%AE%E9%A2%98/" data-toggle="tooltip" data-placement="top" title="复盘一下近期碰到的线上问题">
+                        下一篇<br>
+                        <span>复盘一下近期碰到的线上问题</span>
+                        </a>
+                    </li>
+                    
+
+                    
+                    <li class="previous">
+                        <a href="/blog/2022/05/06/%E8%81%8A%E8%81%8A%E9%9A%8F%E6%9C%BA%E5%87%BD%E6%95%B0/" data-toggle="tooltip" data-placement="top" title="聊聊随机函数">
+                            上一篇<br>
+                            <span>聊聊随机函数</span>
+                        </a>
+                    </li>
+                    
+
+                </ul>
+                <hr style="visibility: hidden;">
+
+            </div>  
+
+    <!-- Side Catalog Container -->
+        
+            <div class="
+                col-lg-2 col-lg-offset-0
+                visible-lg-block
+                sidebar-container
+                catalog-container">
+                <div class="side-catalog">
+                    <hr class="hidden-sm hidden-xs">
+                    <h5>
+                        <a class="catalog-toggle" href="#">目录</a>
+                    </h5>
+                    <ul class="catalog-body"></ul>
+                </div>
+            </div>
+        
+
+    <!-- Sidebar Container -->
+            <div class="
+                col-lg-8 col-lg-offset-2
+                col-md-10 col-md-offset-1
+                sidebar-container">
+
+                <!-- Featured Tags -->
+                
+
+
+<section>
+    
+        <hr class="hidden-sm hidden-xs">
+    
+    <h5><a href="/archive/">归档</a></h5>
+    <div class="tags">
+        
+        
+        
+        </a>
+        
+        
+                <a data-sort="0099" 
+                    href="/archive/?tag=java"
+                    title="java"
+                    rel="10">java</a>
+        
+                <a data-sort="0060" 
+                    href="/archive/?tag=%E6%97%A5%E5%B8%B8%E8%AE%B0%E5%BD%95"
+                    title="日常记录"
+                    rel="49">日常记录</a>
+        
+                <a data-sort="0097" 
+                    href="/archive/?tag=MySQL"
+                    title="MySQL"
+                    rel="12">MySQL</a>
+        
+                <a data-sort="0101" 
+                    href="/archive/?tag=%E5%A4%9A%E7%BA%BF%E7%A8%8B"
+                    title="多线程"
+                    rel="8">多线程</a>
+        
+                <a data-sort="0102" 
+                    href="/archive/?tag=Spring"
+                    title="Spring"
+                    rel="7">Spring</a>
+        
+                <a data-sort="0105" 
+                    href="/archive/?tag=%E8%AE%BE%E8%AE%A1%E6%A8%A1%E5%BC%8F"
+                    title="设计模式"
+                    rel="4">设计模式</a>
+        
+                <a data-sort="0105" 
+                    href="/archive/?tag=Redis"
+                    title="Redis"
+                    rel="4">Redis</a>
+        
+                <a data-sort="0105" 
+                    href="/archive/?tag=SpringBoot"
+                    title="SpringBoot"
+                    rel="4">SpringBoot</a>
+        
+                <a data-sort="0105" 
+                    href="/archive/?tag=Zookeeper"
+                    title="Zookeeper"
+                    rel="4">Zookeeper</a>
+        
+                <a data-sort="0106" 
+                    href="/archive/?tag=%E5%BE%AE%E6%9C%8D%E5%8A%A1"
+                    title="微服务"
+                    rel="3">微服务</a>
+        
+                <a data-sort="0106" 
+                    href="/archive/?tag=%E7%AE%97%E6%B3%95"
+                    title="算法"
+                    rel="3">算法</a>
+        
+                <a data-sort="0106" 
+                    href="/archive/?tag=Docker"
+                    title="Docker"
+                    rel="3">Docker</a>
+        
+                <a data-sort="0107" 
+                    href="/archive/?tag=%E5%B7%A5%E4%BD%9C%E9%A1%B9%E7%9B%AE%E6%80%9D%E8%80%83"
+                    title="工作项目思考"
+                    rel="2">工作项目思考</a>
+        
+                <a data-sort="0107" 
+                    href="/archive/?tag=%E7%BA%BF%E4%B8%8A%E4%BA%8B%E6%95%85"
+                    title="线上事故"
+                    rel="2">线上事故</a>
+        
+                <a data-sort="0107" 
+                    href="/archive/?tag=ChatGPT"
+                    title="ChatGPT"
+                    rel="2">ChatGPT</a>
+        
+                <a data-sort="0107" 
+                    href="/archive/?tag=Java"
+                    title="Java"
+                    rel="2">Java</a>
+        
+                <a data-sort="0107" 
+                    href="/archive/?tag=MQTT"
+                    title="MQTT"
+                    rel="2">MQTT</a>
+        
+                <a data-sort="0107" 
+                    href="/archive/?tag=MyBatis"
+                    title="MyBatis"
+                    rel="2">MyBatis</a>
+        
+                <a data-sort="0107" 
+                    href="/archive/?tag=NIO"
+                    title="NIO"
+                    rel="2">NIO</a>
+        
+                <a data-sort="0107" 
+                    href="/archive/?tag=Netty"
+                    title="Netty"
+                    rel="2">Netty</a>
+        
+                <a data-sort="0107" 
+                    href="/archive/?tag=SpringCloud"
+                    title="SpringCloud"
+                    rel="2">SpringCloud</a>
+        
+                <a data-sort="0107" 
+                    href="/archive/?tag=SpringCloud-GateWay"
+                    title="SpringCloud-GateWay"
+                    rel="2">SpringCloud-GateWay</a>
+        
+                <a data-sort="0107" 
+                    href="/archive/?tag=k8s"
+                    title="k8s"
+                    rel="2">k8s
+    </div>
+</section>
+
+
+                <!-- Friends Blog -->
+<!--                -->
+            </div>
+        </div>
+    </div>
+</article>
+
+<!-- add support for mathjax by voleking-->
+
+
+
+<!-- Page-view counter: Busuanzi does not accept localhost or 127.0.0.1. -->
+<script src="https://cdn.busuanzi.cc/busuanzi/3.6.9/busuanzi.min.js" defer></script>
+
+
+
+
+
+<!-- async load function -->
+<script>
+    function async(u, c) {
+      var d = document, t = 'script',
+          o = d.createElement(t),
+          s = d.getElementsByTagName(t)[0];
+      o.src = u;
+      if (c) { o.addEventListener('load', function (e) { c(null, e); }, false); }
+      s.parentNode.insertBefore(o, s);
+    }
+</script>
+<!-- anchor-js, Doc:http://bryanbraun.github.io/anchorjs/ -->
+<script>
+    async("//cdnjs.cloudflare.com/ajax/libs/anchor-js/1.1.1/anchor.min.js",function(){
+        anchors.options = {
+          visible: 'always',
+          placement: 'right',
+          icon: '#'
+        };
+        anchors.add().remove('.intro-header h1').remove('.subheading').remove('.sidebar-container h5');
+    })
+</script>
+<style>
+    /* place left on bigger screen */
+    @media all and (min-width: 800px) {
+        .anchorjs-link{
+            position: absolute;
+            left: -0.75em;
+            font-size: 1.1em;
+            margin-top : -0.1em;
+        }
+    }
+</style>
+
+
+
+    <!-- Footer -->
+<footer>
+    <div class="container">
+        <div class="row">
+            <div class="col-lg-8 col-lg-offset-2 col-md-10 col-md-offset-1">
+                <!-- &lt;!&ndash; SNS Link &ndash;&gt;
+                
+
+
+<ul class="list-inline text-center">
+
+
+  
+
+</ul> -->
+
+                <p class="copyright text-muted">
+                    <!-- Copyright &copy; jamie Blog 2026
+                    <br> -->
+                    Copyright &copy; 2016–2026 jamie Blog<br>
+                    Powered by <a href="/about/">jamie</a>
+               </p>
+           </div>
+       </div>
+   </div>
+</footer>
+
+<!-- jQuery -->
+<script src="/js/jquery.min.js "></script>
+
+<!-- Bootstrap Core JavaScript -->
+<!-- Currently, only navbar scroll-down effect at desktop still depends on this -->
+<script src="/js/bootstrap.min.js "></script>
+
+<!-- Custom Theme JavaScript -->
+<script src="/js/hux-blog.min.js "></script>
+<script src="/js/blog-search.js"></script>
+
+
+<!-- Article image preview -->
+<script src="/js/post-image-preview.js"></script>
+
+
+<!-- Service Worker -->
+
+<script src="/js/snackbar.js "></script>
+<script src="/js/sw-registration.js "></script>
+
+
+
+
+<!-- async load function -->
+<script>
+    function async(u, c) {
+      var d = document, t = 'script',
+          o = d.createElement(t),
+          s = d.getElementsByTagName(t)[0];
+      o.src = u;
+      if (c) { o.addEventListener('load', function (e) { c(null, e); }, false); }
+      s.parentNode.insertBefore(o, s);
+    }
+</script>
+
+<!--
+     Because of the native support for backtick-style fenced code blocks
+     right within the Markdown is landed in Github Pages,
+     From V1.6, There is no need for Highlight.js,
+     so Huxblog drops it officially.
+
+     - https://github.com/blog/2100-github-pages-now-faster-and-simpler-with-jekyll-3-0
+     - https://help.github.com/articles/creating-and-highlighting-code-blocks/
+     - https://github.com/jneen/rouge/wiki/list-of-supported-languages-and-lexers
+-->
+<!--
+    <script>
+        async("http://cdn.bootcss.com/highlight.js/8.6/highlight.min.js", function(){
+            hljs.initHighlightingOnLoad();
+        })
+    </script>
+    <link href="http://cdn.bootcss.com/highlight.js/8.6/styles/github.min.css" rel="stylesheet">
+-->
+
+
+
+
+
+<!--fastClick.js -->
+<!-- <script>
+    async("//cdnjs.cloudflare.com/ajax/libs/fastclick/1.0.6/fastclick.min.js", function(){
+        var $nav = document.querySelector("nav");
+        if($nav) FastClick.attach($nav);
+    })
+</script> -->
+
+
+<!-- Google Analytics -->
+
+<script>
+    // dynamic User by Hux
+    var _gaId = 'UA-49627206-1';
+    var _gaDomain = 'jamie.me';
+
+    // Originial
+    (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+    (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+    m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+    });
+    // (window,document,'script','//www.google-analytics.com/analytics.js','ga');
+
+    ga('create', _gaId, _gaDomain);
+    ga('send', 'pageview');
+</script>
+
+
+
+<!-- Baidu Tongji -->
+
+
+
+<!-- Side Catalog -->
+
+<script type="text/javascript">
+    function generateCatalog (selector) {
+
+        // interop with multilangual 
+        if ('' == 'true') {
+            _containerSelector = 'div.post-container.active'
+        } else {
+            _containerSelector = 'div.post-container'
+        }
+
+        // init
+        var P = $(_containerSelector),a,n,t,l,i,c;
+        a = P.find('h1,h2,h3,h4,h5,h6');
+
+        // clean
+        $(selector).html('')
+
+        // appending
+        a.each(function () {
+            n = $(this).prop('tagName').toLowerCase();
+            i = "#"+$(this).prop('id');
+            t = $(this).text();
+            c = $('<a href="'+i+'" rel="nofollow">'+t+'</a>');
+            l = $('<li class="'+n+'_nav"></li>').append(c);
+            $(selector).append(l);
+        });
+        return true;
+    }
+
+    generateCatalog(".catalog-body");
+
+    // toggle side catalog
+    $(".catalog-toggle").click((function(e){
+        e.preventDefault();
+        $('.side-catalog').toggleClass("fold")
+    }))
+
+    /*
+     * Doc: https://github.com/davist11/jQuery-One-Page-Nav
+     * Fork by Hux to support padding
+     */
+    async("/js/jquery.nav.js", function () {
+        $('.catalog-body').onePageNav({
+            currentClass: "active",
+            changeHash: !1,
+            easing: "swing",
+            filter: "",
+            scrollSpeed: 700,
+            scrollOffset: 0,
+            scrollThreshold: .2,
+            begin: null,
+            end: null,
+            scrollChange: null,
+            padding: 80
+        });
+    });
+</script>
+
+
+
+<!-- Multi-Lingual -->
+
+
+
+
+<!-- Image to hack wechat -->
+<!--<img src="/img/icon_wechat.png" width="0" height="0" />-->
+<!-- Migrate from head to bottom, no longer block render and still work -->
+
+</body>
+
+</html>

@@ -1,0 +1,11 @@
+{
+  "name": "jamie Blog",
+  "short_name": "jamie Blog",
+  "description": "About an engineer & designer who loves web.",
+  "icons": [],
+  "background_color": "#fff",
+  "theme_color": "#000",
+  "start_url": "/",
+  "display": "standalone",
+  "orientation": "portrait"
+}

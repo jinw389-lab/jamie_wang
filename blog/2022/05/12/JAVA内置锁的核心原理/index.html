@@ -1,0 +1,963 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="baidu-site-verification" content="code-8XHgqNvUKa" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+    <meta name="description" content="关于后端程序设计 | 这里是 jamie 的个人博客。">
+    <meta name="keywords"  content="jamie, java, spring, jamie的博客, 博客, 个人网站, 互联网, 后端, jamie's blog">
+    <meta name="theme-color" content="#000000">
+
+    <!-- Apply the saved theme before rendering to avoid a color flash. -->
+    <script>
+        (function () {
+            var theme = null;
+            try {
+                theme = localStorage.getItem('jamie-blog-theme');
+            } catch (error) {}
+
+            if (['classic', 'eye', 'dark'].indexOf(theme) === -1) {
+                theme = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches
+                    ? 'dark'
+                    : 'classic';
+            }
+
+            document.documentElement.setAttribute('data-theme', theme);
+        })();
+    </script>
+    
+    <!-- Open Graph -->
+    <meta property="og:title" content="JAVA内置锁的核心原理 - jamie的博客 | jamie Blog">
+    
+    <meta property="og:type" content="article">
+    <meta property="og:description" content="1. 前言
+今天，无意中看了一下日期。5.12，啊！今天是512汶川地震14周年。时间过得好快。都14年了，14年前的今天，我还在上初中。现在已经都快奔三了。哎！默哀当年的遇难同胞吧！
+
+">
+    
+    <meta property="article:published_time" content="2022-05-12T00:00:00Z">
+    
+    
+    
+    <meta property="article:tag" content="多线程">
+    
+    
+    <meta property="og:image" content="https://jinw389-lab.github.io/images/wexin.png">
+    <meta property="og:url" content="https://jinw389-lab.github.io/blog/2022/05/12/JAVA%E5%86%85%E7%BD%AE%E9%94%81%E7%9A%84%E6%A0%B8%E5%BF%83%E5%8E%9F%E7%90%86/">
+    <meta property="og:site_name" content="jamie的博客 | jamie Blog">
+    
+    <title>JAVA内置锁的核心原理 - jamie的博客 | jamie Blog</title>
+
+    <!-- Web App Manifest -->
+    <link rel="manifest" href="/pwa/manifest.json">
+
+    <!-- Favicon -->
+    <link rel="shortcut icon" href="/img/logo.jpg">
+    
+    <!-- Canonical URL -->
+    <link rel="canonical" href="https://jinw389-lab.github.io/blog/2022/05/12/JAVA%E5%86%85%E7%BD%AE%E9%94%81%E7%9A%84%E6%A0%B8%E5%BF%83%E5%8E%9F%E7%90%86/">
+
+    <!-- Bootstrap Core CSS -->
+    <link rel="stylesheet" href="/css/bootstrap.min.css">
+
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="/css/hux-blog.min.css">
+    <link rel="stylesheet" href="/css/interaction.css">
+    <link rel="stylesheet" href="/css/themes.css">
+    <link rel="stylesheet" href="/css/search.css">
+    <script src="/js/theme-switcher.js" defer></script>
+
+    <!-- Custom Fonts -->
+    <!-- <link href="http://maxcdn.bootstrapcdn.com/font-awesome/4.3.0/css/font-awesome.min.css" rel="stylesheet" type="text/css"> -->
+    <!-- Hux change font-awesome CDN to qiniu -->
+    <!-- <link href="//cdnjs.cloudflare.com/ajax/libs/font-awesome/4.6.3/css/font-awesome.min.css" rel="stylesheet" type="text/css"> -->
+
+
+    <!-- HTML5 Shim and Respond.js IE8 support of HTML5 elements and media queries -->
+    <!-- WARNING: Respond.js doesn't work if you view the page via file:// -->
+    <!--[if lt IE 9]>
+        <script src="https://oss.maxcdn.com/libs/html5shiv/3.7.0/html5shiv.js"></script>
+        <script src="https://oss.maxcdn.com/libs/respond.js/1.4.2/respond.min.js"></script>
+    <![endif]-->
+
+    <!-- ga & ba script hoook -->
+    <script></script>
+</head>
+
+
+<!-- hack iOS CSS :active style -->
+<body ontouchstart="">
+
+    <!-- Navigation -->
+
+<nav class="navbar navbar-default navbar-custom navbar-fixed-top">
+
+    <div class="container-fluid">
+        <!-- Brand and toggle get grouped for better mobile display -->
+        <div class="navbar-header page-scroll">
+            <button type="button" class="navbar-toggle">
+                <span class="sr-only">Toggle navigation</span>
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+            </button>
+            <a class="navbar-brand" href="/">jamie Blog</a>
+        </div>
+
+        <!-- Collect the nav links, forms, and other content for toggling -->
+        <div id="huxblog_navbar">
+            <div class="navbar-collapse">
+                <ul class="nav navbar-nav navbar-right">
+                    <li>
+                        <a href="/">首页</a>
+                    </li>
+                    
+                    
+                    
+                    
+                    <li>
+                        
+                            <a href="/about/">关于</a>
+                        
+                    </li>
+                    
+                    
+                    
+                    <li>
+                        
+                        <a href="/archive/">归档</a>
+                        
+                    </li>
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                </ul>
+            </div>
+        </div>
+        <!-- /.navbar-collapse -->
+    </div>
+    <!-- /.container -->
+</nav>
+<div class="floating-tools edge-right is-collapsed" data-floating-tools>
+    <button class="floating-tools-handle" type="button" data-floating-tools-toggle aria-expanded="false" aria-label="展开快捷工具，可拖动调整位置" title="点击展开，拖动调整位置">
+    </button>
+    <div class="floating-tools-panel">
+        <a class="floating-tool floating-home-button" href="/" aria-label="首页" title="首页">
+            <svg class="floating-nav-icon" viewBox="0 0 20 20" aria-hidden="true">
+                <path d="m3 9.5 7-6 7 6"></path>
+                <path d="M5.5 8.5V17h9V8.5M8.5 17v-4.5h3V17"></path>
+            </svg>
+            <span class="floating-tool-label">首页</span>
+        </a>
+        <a class="floating-tool floating-about-button" href="/about/" aria-label="关于" title="关于">
+            <svg class="floating-nav-icon" viewBox="0 0 20 20" aria-hidden="true">
+                <circle cx="10" cy="6.5" r="3"></circle>
+                <path d="M4.5 17c.45-3.15 2.3-4.75 5.5-4.75s5.05 1.6 5.5 4.75"></path>
+            </svg>
+            <span class="floating-tool-label">关于</span>
+        </a>
+        <a class="floating-tool floating-archive-button" href="/archive/" aria-label="归档" title="归档">
+            <svg class="floating-nav-icon" viewBox="0 0 20 20" aria-hidden="true">
+                <path d="M3 5.5h14V17H3zM2.5 3h15v3h-15zM8 9.5h4"></path>
+            </svg>
+            <span class="floating-tool-label">归档</span>
+        </a>
+        <button class="floating-tool floating-search-button" type="button" data-search-open aria-label="打开文章搜索" title="搜索">
+            <svg class="floating-search-icon" viewBox="0 0 24 24" aria-hidden="true">
+                <circle cx="11" cy="11" r="6.5"></circle>
+                <path d="m16 16 4 4"></path>
+            </svg>
+            <span class="floating-tool-label">搜索</span>
+        </button>
+        <button class="floating-tool theme-switcher" type="button" data-theme-toggle aria-live="polite">
+            <span class="theme-switcher-icon" data-theme-icon aria-hidden="true">◐</span>
+            <span class="floating-tool-label" data-theme-label>经典</span>
+        </button>
+    </div>
+</div>
+<script>
+    // Drop Bootstarp low-performance Navbar
+    // Use customize navbar with high-quality material design animation
+    // in high-perf jank-free CSS3 implementation
+    var $body   = document.body;
+    var $toggle = document.querySelector('.navbar-toggle');
+    var $navbar = document.querySelector('#huxblog_navbar');
+    var $collapse = document.querySelector('.navbar-collapse');
+
+    var __HuxNav__ = {
+        close: function(){
+            $navbar.className = " ";
+            // wait until animation end.
+            setTimeout(function(){
+                // prevent frequently toggle
+                if($navbar.className.indexOf('in') < 0) {
+                    $collapse.style.height = "0px"
+                }
+            },400)
+        },
+        open: function(){
+            $collapse.style.height = "auto"
+            $navbar.className += " in";
+        }
+    }
+
+    // Bind Event
+    $toggle.addEventListener('click', function(e){
+        if ($navbar.className.indexOf('in') > 0) {
+            __HuxNav__.close()
+        }else{
+            __HuxNav__.open()
+        }
+    })
+
+    /**
+     * Since Fastclick is used to delegate 'touchstart' globally
+     * to hack 300ms delay in iOS by performing a fake 'click',
+     * Using 'e.stopPropagation' to stop 'touchstart' event from 
+     * $toggle/$collapse will break global delegation.
+     * 
+     * Instead, we use a 'e.target' filter to prevent handler
+     * added to document close HuxNav.  
+     *
+     * Also, we use 'click' instead of 'touchstart' as compromise
+     */
+    document.addEventListener('click', function(e){
+        if(e.target == $toggle) return;
+        if(e.target.className == 'icon-bar') return;
+        __HuxNav__.close();
+    })
+</script>
+
+    <div class="blog-search" data-blog-search data-index-url="/search.json" hidden>
+    <div class="blog-search-backdrop" data-search-close></div>
+    <section class="blog-search-dialog" role="dialog" aria-modal="true" aria-labelledby="blog-search-title">
+        <h2 class="sr-only" id="blog-search-title">搜索文章</h2>
+        <div class="blog-search-input-row">
+            <svg class="blog-search-icon" viewBox="0 0 24 24" aria-hidden="true">
+                <circle cx="11" cy="11" r="6.5"></circle>
+                <path d="m16 16 4 4"></path>
+            </svg>
+            <input
+                class="blog-search-input"
+                type="search"
+                inputmode="search"
+                autocomplete="off"
+                spellcheck="false"
+                placeholder="搜索标题、标签或文章内容"
+                aria-label="搜索文章"
+                aria-controls="blog-search-results"
+            >
+            <button class="blog-search-close" type="button" data-search-close aria-label="关闭搜索">×</button>
+        </div>
+        <div class="blog-search-status" data-search-status aria-live="polite">输入关键词开始搜索</div>
+        <div class="blog-search-results" id="blog-search-results" data-search-results role="listbox"></div>
+        <div class="blog-search-help" aria-hidden="true">
+            <span><kbd>↑</kbd><kbd>↓</kbd> 选择</span>
+            <span><kbd>Enter</kbd> 打开</span>
+            <span><kbd>Esc</kbd> 关闭</span>
+        </div>
+    </section>
+</div>
+
+
+    <!-- Image to hack wechat -->
+<!-- <img src="/img/icon_wechat.png" width="0" height="0"> -->
+<!-- <img src="/img/home-bg.jpg" width="0" height="0"> -->
+
+<!-- Post Header -->
+
+
+
+<style type="text/css">
+    header.intro-header{
+        position: relative;
+        background-image: url('/img/home-bg.jpg');
+        background: ;
+    }
+
+    
+</style>
+
+<header class="intro-header" >
+
+    <div class="header-mask"></div>
+    
+    <div class="container">
+        <div class="row">
+            <div class="col-lg-8 col-lg-offset-2 col-md-10 col-md-offset-1">
+                <div class="post-heading">
+                    <div class="tags">
+                        
+                        <a class="tag" href="/archive/?tag=%E5%A4%9A%E7%BA%BF%E7%A8%8B" title="多线程">多线程</a>
+                        
+                    </div>
+                    <h1>JAVA内置锁的核心原理</h1>
+                    
+                    <h2 class="subheading"></h2>
+                    <span class="meta post-meta-line">
+                        Posted by jamie Blog on 2022-05-12
+                        <span class="post-meta-separator" aria-hidden="true">·</span>
+                        <span class="post-view-count" aria-label="文章阅读量">阅读 <span id="busuanzi_page_pv">--</span> 次</span>
+                    </span>
+                </div>
+            </div>
+        </div>
+    </div>
+</header>
+
+
+
+
+
+
+
+<!-- Post Content -->
+<article>
+    <div class="container">
+        <div class="row">
+
+    <!-- Post Container -->
+            <div class="
+                col-lg-8 col-lg-offset-2
+                col-md-10 col-md-offset-1
+                post-container">
+
+                <!-- Multi-Lingual -->
+                
+
+				<h3 id="1-前言">1. 前言</h3>
+<p>今天，无意中看了一下日期。5.12，啊！今天是512汶川地震14周年。时间过得好快。都14年了，14年前的今天，我还在上初中。现在已经都快奔三了。哎！默哀当年的遇难同胞吧！</p>
+
+<p>今天来整理一下<code class="language-plaintext highlighter-rouge">JAVA</code>中的内置锁，这方面可以说是面试必问的一块基础知识了，之前也有整理这块的知识，但是都比较零碎化。就想抽这个时间来好好整理一番，方便后续查阅与学习。</p>
+
+<h3 id="2-对象结构">2. 对象结构</h3>
+<p><img src="/images/线程池/04.png" alt="" /></p>
+<h4 id="21-对象的三大部分">2.1 对象的三大部分</h4>
+<p>先来聊聊对象的结构。包括三部分：对象头、对象体和对齐字节。</p>
+<blockquote>
+
+  <p>（1）对象头    <br />
+对象头包括三个字段，第一个字段叫作<code class="language-plaintext highlighter-rouge">Mark Word</code>（标记字），用于存储自身运行时的数据，例如GC标志位、哈希码、锁状态等信息。第二个字段叫作<code class="language-plaintext highlighter-rouge">Class Pointer</code>（类对象指针），用于存放方法区Class对象的地址，虚拟机通过这个指针来确定这个对象是哪个类的实例。
+第三个字段叫作<code class="language-plaintext highlighter-rouge">Array Length</code>（数组长度）。如果对象是一个<code class="language-plaintext highlighter-rouge">Java</code>数组，那么此字段必须有，用于记录数组长度的数据；如果对象不是一个Java数组，那么此字段不存在，所以这是一个可选字段。     <br />
+（2）对象体     <br />
+对象体包含对象的实例变量（成员变量），用于成员属性值，包括父类的成员属性值。这部分内存按4字节对齐。     <br />
+（3）对齐字节     <br />
+对齐字节也叫作填充对齐，其作用是用来保证Java对象所占内存字节数为8的倍数HotSpot VM的内存管理要求对象起始地址必须是8字节的整数倍。对象头本身是8的倍数，当对象的实例变量数据不是8的倍数时，便需要填充数据来保证8字节的对齐。该部分不是必须的，没有特殊含义。</p>
+</blockquote>
+
+<h4 id="22-简要说明一下对象头中的三个字段">2.2 简要说明一下对象头中的三个字段</h4>
+<blockquote>
+
+  <p>（1）<code class="language-plaintext highlighter-rouge">Mark Word</code>（标记字）字段主要用来表示对象的线程锁状态，另外还可以用来配合GC存放该对象的hashCode。 这一块在下面谈到锁的实现部分会重点聊。 <br />
+（2）<code class="language-plaintext highlighter-rouge">Class Pointer</code>（类对象指针）字段是一个指向方法区中Class信息的指针，意味着该对象可随时知道自己是哪个Class的实例。  <br />
+（3）<code class="language-plaintext highlighter-rouge">Array Length</code>（数组长度）字段占用32位（在32位JVM中）字节，这是可选的，只有当本对象是一个数组对象时才会有这个部分。</p>
+</blockquote>
+
+<h4 id="23-mark-word结构信息">2.3 Mark Word结构信息</h4>
+<p>前面有提到，<code class="language-plaintext highlighter-rouge">Mark Word</code>字段是用来表示线程锁的状态的，里面包含了锁的信息，在<code class="language-plaintext highlighter-rouge">java</code>内置锁中，锁的状态分别无锁，偏向锁，轻量级锁，重量级锁。在<code class="language-plaintext highlighter-rouge">java</code> 1.6之前。<code class="language-plaintext highlighter-rouge">java</code>内置锁只有一个重量级锁，在1.6之后，针对<code class="language-plaintext highlighter-rouge">synchronized</code>关键字做了优化，此后才有了这四个状态。并且这四个状态也会随着线程竞争激烈递增而升级，而且不是一个可逆的过程。所以锁的只有升级过程，没有降级过程。</p>
+<h4 id="24-不同状态下mark-word的结构数据变化">2.4 不同状态下，Mark Word的结构数据变化</h4>
+
+<p>在32位下的结构信息
+<img src="/images/线程池/05.png" alt="" />   <br />
+在64位下的结构信息
+<img src="/images/线程池/06.png" alt="" /></p>
+
+<p>下面针对64位来做详细描述：</p>
+<blockquote>
+
+  <p>（1）lock：锁状态标记位，占两个二进制位，由于希望用尽可能少的二进制位表示尽可能多的信息，因此设置了lock标记。该标记的值不同，整个<code class="language-plaintext highlighter-rouge">Mark Word</code>表示的含义就不同。  <br />
+（2）biased_lock：对象是否启用偏向锁标记，只占1个二进制位。为1时表示对象启用偏向锁，为0时表示对象没有偏向锁。   <br />
+（3）age：4位的Java对象分代年龄。在GC中，对象在Survivor区复制一次，年龄就增加1。当对象达到设定的阈值时，将会晋升到老年代。默认情况下，并行GC的年龄阈值为15，并发GC的年龄阈值为6。由于age只有4位，因此最大值为15，这就是-XX:MaxTenuringThreshold选项最大值为15的原因。   <br />
+（4）identity_hashcode：31位的对象标识HashCode（哈希码）采用延迟加载技术，当调用Object.hashCode()方法或者System.identityHashCode()方法计算对象的HashCode后，其结果将被写到该对象头中。当对象被锁定时，该值会移动到Monitor（监视器）中。   <br />
+（5）thread：54位的线程ID值为持有偏向锁的线程ID。   <br />
+（6）epoch：偏向时间戳。   <br />
+（7）ptr_to_lock_record：占62位，在轻量级锁的状态下指向栈帧中锁记录的指针。   <br />
+（8）ptr_to_heavyweight_monitor：占62位，在重量级锁的状态下指向对象监视器的指针</p>
+</blockquote>
+
+<h3 id="3-偏向锁原理">3. 偏向锁原理</h3>
+<p>在大多数情况下，同一段同步代码块，基本很少出现锁竞争的情况，为了降低CPU从用户态切换为内核态的频率，减少CPU资源的浪费，就引入了偏向锁。</p>
+
+<p>偏向锁的原理就是，在一个线程进入代码临界区的时候，若没有存在竞争，则会进入偏向状态，此时，锁标志位(lock)变为<code class="language-plaintext highlighter-rouge">01</code>,偏向标志位（biased_lock）改为<code class="language-plaintext highlighter-rouge">1</code>，最后采用CAS操作将线程id写入<code class="language-plaintext highlighter-rouge">Mark word</code> 中。此后，该线程若重入，直接可以判断<code class="language-plaintext highlighter-rouge">Mark word</code>中的记录的线程id是否是自己，是的话，直接进入同步代码块，都无需进行<code class="language-plaintext highlighter-rouge">CAS</code>操作，性能极高。从而有效提升程序的性能。若其他线程尝试获取锁，发现<code class="language-plaintext highlighter-rouge">Mark work</code>中的线程id并不是自己的线程id，此时偏向锁结束，撤销，升级为轻量级锁。</p>
+
+<p>偏向锁主要应用于不会存在线程竞争的情况，这样可以有效提高程序性能。
+在存在有多个线程竞争的情况下，偏向锁会发生频繁的偏向锁撤销情况，这样会有较大的性能开销。</p>
+<blockquote>
+
+  <p>注：
+（1）在偏向锁的前提下，若该线程执行完成后，偏向锁依然不会撤销，对象头中的Mark word依然保留了该线程的id，锁标志位依然是偏向锁状态。   <br />
+（2）偏向锁的功能不是一启动程序就生效的，存在一定时间的延迟，JVM默认这个延迟时间是4s。为什么要延迟呢？是由于在程序启动中，有很多加载资源的操作，并且这些操作与偏向锁没有任何关系，一开始就给对象加上偏向锁是没有意义的，而且还会消耗一定的性能，不启用，可以很大程度上减少偏向锁撤销带来的性能影响，所以偏向锁被设计为延迟生效。</p>
+</blockquote>
+
+<h4 id="31-偏向锁撤销">3.1. 偏向锁撤销</h4>
+<p>偏向锁的膨胀只有在多个线程竞争才会出现，那么偏向锁的撤销是在何时触发呢？
+基本有两种情况会触发撤销操作：</p>
+<ol>
+  <li>第二个个线程发生竞争，发现mark word中的线程id不是当前线程的id时，触发撤销。</li>
+  <li>锁对象，发生hashcode计算。因为hashcode计算后的值，是要保存到mark word中的，这个时候也是要撤销。</li>
+</ol>
+
+<p>下面是锁撤销过程：</p>
+<blockquote>
+
+  <p>（1）在一个安全点停止拥有锁的线程。   <br />
+（2）遍历线程的栈帧，检查是否存在锁记录。如果存在锁记录，就需要清空锁记录，使其变成无锁状态，并修复锁记录指向的Mark Word，清除其线程ID。   <br />
+（3）将当前锁升级成轻量级锁。   <br />
+（4）唤醒当前线程。</p>
+</blockquote>
+
+<h4 id="32-偏向锁膨胀">3.2. 偏向锁膨胀</h4>
+<p>前面已经提到，存在多个线程竞争的时候，首先是要对锁对象中的mark word中的线程id进行判断，若id不是当前线程的id，JVM则会判断mark word中的线程id的线程是否存活，若已经不存活了，则撤销到无锁状态，然后重新偏向。若还存活，则进一步判断线程的锁记录是否持有偏向锁，若持有，则直接将其撤销，然后升级为轻量级锁。</p>
+
+<h3 id="4-轻量级锁原理">4. 轻量级锁原理</h3>
+<p>在大多数情况下，线程竞争到锁，很快就会执行完，然后就释放掉锁，其他线程然后再来争抢锁。若这个时候采用重量级锁，CPU就会频繁的用户态与内核态进行切换。所以基于这个因素的考虑，JAVA在此引入了轻量级锁来进行优化。轻量级锁是采用CAS自旋来锁来实现，在线程没有获取到锁的情况下，线程会进行自旋，这样不会导致CPU用户态转为内核态的切换，自旋几次后就会有很大概率获取到锁。以此提高了程序性能。</p>
+
+<p>轻量级锁的实现过程：
+在线程即将进入代码临界区的时候，去获取锁的一个争抢，若此时，内置锁没有被锁定，JVM首先会在线程的方法栈帧中建立一个锁记录空间，用来存储锁对象的Mark word拷贝。然后线程开始执行CAS操作，将锁对象的Mark word的<code class="language-plaintext highlighter-rouge">ptr_to_lock_record</code>尝试更新为该线程的锁记录空间地址。若这个操作成功了，就代表该线程获取到了锁。接着JVM会将lock锁记录改为00（轻量级锁）。随后JVM也会将Mark word中原来的锁对象信息拷贝到保存到锁记录中<code class="language-plaintext highlighter-rouge">Displaced Mark Word</code>中，最后将锁记录中的owner指针指向锁对象。下面画一个简图。</p>
+
+<p><img src="/images/线程池/07.png" alt="" />   <br />
+竞争成功获取到锁后：  <br />
+<img src="/images/线程池/08.png" alt="" /></p>
+
+<p>现在来思考一下，为什么要设计一个Displaced Mark Word来保存锁对象的之前Mark word信息呢？   <br />
+是方便之后锁的释放时，将锁对象的Mark word进行还原。</p>
+
+<h4 id="41-轻量级锁分类">4.1 轻量级锁分类</h4>
+<p>普通自旋锁：
+在线程没有争抢到锁时，开始自旋尝试获取，直到获取到锁为止（占有锁的线程释放）。由于自旋会消耗一定的CPU，相当于这个线程，什么也不做，就在本地循环，存在一定的资源浪费。这也是为什么轻量级锁适用于占有锁时间很短的情况。这样的话，锁就能很快释放，自旋的线程要不了几次自旋就能获取到锁。这里存在着这么一个权衡。在java中，默认自旋有次数限制，默认值为10次。</p>
+
+<p>自适应自旋锁：
+自适应自旋锁是相对普通自旋锁来说的，普通自旋锁自旋次数是固定的，自适应就不是固定的次数，可以根据自身情况动态调整。实现的原理就是根据上一次在同一个锁上的自旋时间来判断；若前一次同一个锁对象上成功获取到过锁，那么JVM认为本次也是有很大概率能够获取到锁的，此时就可能自旋的次数会多一点，时间也相对要长一些。若对于这个锁，抢占的线程很少获取成功，那么自适应自旋锁就会根据实际情况，减少自旋次数与时间，必要情况下可能还会取消自旋，直接放弃锁的一个争抢。</p>
+
+<p>在java 1.6是普通自旋锁，1.7后默认是开启了自适应自旋锁。</p>
+
+<p>自旋锁也被称为轻量级锁，乐观锁，这个过程没有将线程进行挂起，线程会持有CPU的执行权，线程会不停的空轮询。</p>
+
+<h4 id="42-轻量级锁的膨胀">4.2 轻量级锁的膨胀</h4>
+<p>轻量级锁适用于占有锁时间很短的情况。但是在实际场景下，还是会存在很多占有锁时间很长的情况，那么针对这种情况，轻量级锁反而是不太适用的。当碰到这样的情况，轻量级锁就会发生锁膨胀，转变为重量级锁。</p>
+
+<h3 id="5-重量级锁原理">5. 重量级锁原理</h3>
+<p>在java中，每个对象创建成功后，都会跟随着创建一个监视器。这个监视器的生命周期与对象相同。对象销毁的同时，与之对应的监视器也会同步销毁。监视器可以理解为一个同步机制。相当于一个用来监视这些线程进入的特殊房间，其义务是保证（同一时间）只有一个线程可以访问被保护的临界区代码块。</p>
+
+<p>在JVM虚拟机中，该机制由c++类<code class="language-plaintext highlighter-rouge">ObjectMonitor</code>实现。下面列举一下我们主要关系的字段。</p>
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code><table class="rouge-table"><tbody><tr><td class="rouge-gutter gl"><pre class="lineno">1
+2
+3
+4
+5
+6
+7
+8
+9
+10
+11
+12
+13
+</pre></td><td class="rouge-code"><pre>//Monitor结构体
+ ObjectMonitor::ObjectMonitor() { 
+ //线程的重入次数
+ _recursions = 0; 
+//标识拥有该Monitor的线程
+ _owner = NULL; 
+ //等待线程组成的双向循环链表
+ _WaitSet = NULL; 
+ //多线程竞争锁进入时的单向链表
+ cxq = NULL ; 
+ //_owner从该双向循环链表中唤醒线程节点
+ _EntryList = NULL ; 
+ }
+</pre></td></tr></tbody></table></code></pre></div></div>
+
+<p>线程流转过程如下：
+<img src="/images/线程池/09.png" alt="" /></p>
+
+<p>cxq：   <br />
+竞争队列，所有要竞争锁的线程都会先进入此队列。  <br />
+线程争抢锁之前都会对cxq队头元素进行CAS争抢，所以该处不是公平的，正因为如此，java中的重量级锁是非公平锁。获取线程是从队尾获取的，并且只有<code class="language-plaintext highlighter-rouge">owner</code>线程操作。</p>
+
+<p>EntryList：   <br />
+cxq中具有资格成为候选资源的线程就会移动至EntryList中。    <br />
+cxq和<code class="language-plaintext highlighter-rouge">EntryList</code>逻辑上都属于等待队列，为了降低线程对<code class="language-plaintext highlighter-rouge">cxq</code>的并发访问，建立了<code class="language-plaintext highlighter-rouge">EntryList</code>队列。在<code class="language-plaintext highlighter-rouge">owner</code>线程释放锁时，<code class="language-plaintext highlighter-rouge">JVM</code>会从<code class="language-plaintext highlighter-rouge">cxq</code>的队尾迁移一个线程到<code class="language-plaintext highlighter-rouge">EntryList</code>中，并且制定<code class="language-plaintext highlighter-rouge">EntryList</code>中的某一个线程为OnDeck线程（一般是head线程）。</p>
+
+<p>WaitSet：   <br />
+获取到锁的线程，调用了<code class="language-plaintext highlighter-rouge">wait</code>方法后将被移动到<code class="language-plaintext highlighter-rouge">WaitSet</code>中。某个线程调用了<code class="language-plaintext highlighter-rouge">notify</code>或者<code class="language-plaintext highlighter-rouge">notifyAll</code>唤醒该线程，该线程才会移动到<code class="language-plaintext highlighter-rouge">EntryList</code>中。</p>
+
+<p>处于ContentionList、EntryList、WaitSet中的线程都处于阻塞状态，线程的阻塞或者唤醒都需要操作系统来帮忙，Linux内核下采用<code class="language-plaintext highlighter-rouge">pthread_mutex_lock</code>系统调用实现，进程需要从用户态切换到内核
+态。这也是重量级锁非常消耗性能的原因。</p>
+
+<h3 id="6-偏向轻量级重量级锁比较">6. 偏向,轻量级,重量级锁比较</h3>
+<p>总结一下<code class="language-plaintext highlighter-rouge">synchronized</code>的执行过程，大致如下：    <br />
+（1）线程抢锁时，<code class="language-plaintext highlighter-rouge">JVM</code>首先检测内置锁对象<code class="language-plaintext highlighter-rouge">Mark Word</code>中的<code class="language-plaintext highlighter-rouge">biased_lock</code>（偏向锁标识）是否设置成1，<code class="language-plaintext highlighter-rouge">lock</code>（锁标志位）是否为01，如果都满足，确认内置锁对象为可偏向状态。   <br />
+（2）在内置锁对象确认为可偏向状态之后，<code class="language-plaintext highlighter-rouge">JVM</code>检查<code class="language-plaintext highlighter-rouge">Mark Word</code>中的线程ID是否为抢锁线程ID，如果是，就表示抢锁线程处于偏向锁状态，抢锁线程快速获得锁，开始执行临界区代码。    <br />
+（3）如果<code class="language-plaintext highlighter-rouge">Mark Word</code>中的线程ID并未指向抢锁线程，就通过CAS操作竞争锁。如果竞争成功，就将<code class="language-plaintext highlighter-rouge">Mark Word</code>中的线程ID设置为抢锁线程，偏向标志位设置为1，锁标志位设置为01，然后执行临界区代码，此时内置锁对象处于偏向锁状态。   <br />
+（4）如果<code class="language-plaintext highlighter-rouge">CAS</code>操作竞争失败，就说明发生了竞争，撤销偏向锁，进而升级为轻量级锁。   <br />
+（5）<code class="language-plaintext highlighter-rouge">JVM</code>使用<code class="language-plaintext highlighter-rouge">CAS</code>将锁对象的<code class="language-plaintext highlighter-rouge">Mark Word</code>替换为抢锁线程的锁记录指针，如果成功，抢锁线程就获得锁。如果替换失败，就表示其他线程竞争锁，<code class="language-plaintext highlighter-rouge">JVM</code>尝试使用<code class="language-plaintext highlighter-rouge">CAS</code>自旋替换抢锁线程的锁记录指针，如果自旋成功（抢锁成功），那么锁对象依然处于轻量级锁状态。    <br />
+（6）如果<code class="language-plaintext highlighter-rouge">JVM</code>的<code class="language-plaintext highlighter-rouge">CAS</code>替换锁记录指针自旋失败，轻量级锁就膨胀为重量级锁，后面等待锁的线程也要进入阻塞状态。总体来说，偏向锁是在没有发生锁争用的情况下使用的；一旦有了第二个线程争用锁，偏向锁就会升级为轻量级锁；如果锁争用很激烈，轻量级锁的<code class="language-plaintext highlighter-rouge">CAS</code>自旋到达阈值后，轻量级锁就会升级为重量级锁。</p>
+
+
+                <hr style="visibility: hidden;">
+                <ul class="pager">
+
+
+                    
+                    <li class="next">
+                        <a href="/blog/2022/05/11/JAVA%E4%B8%AD%E7%BA%BF%E7%A8%8B%E7%9A%84%E7%94%9F%E5%91%BD%E5%91%A8%E6%9C%9F/" data-toggle="tooltip" data-placement="top" title="JAVA中线程的生命周期">
+                        下一篇<br>
+                        <span>JAVA中线程的生命周期</span>
+                        </a>
+                    </li>
+                    
+
+                    
+                    <li class="previous">
+                        <a href="/blog/2022/05/27/Reactor%E6%A8%A1%E5%BC%8F/" data-toggle="tooltip" data-placement="top" title="Reactor模式">
+                            上一篇<br>
+                            <span>Reactor模式</span>
+                        </a>
+                    </li>
+                    
+
+                </ul>
+                <hr style="visibility: hidden;">
+
+            </div>  
+
+    <!-- Side Catalog Container -->
+        
+            <div class="
+                col-lg-2 col-lg-offset-0
+                visible-lg-block
+                sidebar-container
+                catalog-container">
+                <div class="side-catalog">
+                    <hr class="hidden-sm hidden-xs">
+                    <h5>
+                        <a class="catalog-toggle" href="#">目录</a>
+                    </h5>
+                    <ul class="catalog-body"></ul>
+                </div>
+            </div>
+        
+
+    <!-- Sidebar Container -->
+            <div class="
+                col-lg-8 col-lg-offset-2
+                col-md-10 col-md-offset-1
+                sidebar-container">
+
+                <!-- Featured Tags -->
+                
+
+
+<section>
+    
+        <hr class="hidden-sm hidden-xs">
+    
+    <h5><a href="/archive/">归档</a></h5>
+    <div class="tags">
+        
+        
+        
+        </a>
+        
+        
+                <a data-sort="0099" 
+                    href="/archive/?tag=java"
+                    title="java"
+                    rel="10">java</a>
+        
+                <a data-sort="0060" 
+                    href="/archive/?tag=%E6%97%A5%E5%B8%B8%E8%AE%B0%E5%BD%95"
+                    title="日常记录"
+                    rel="49">日常记录</a>
+        
+                <a data-sort="0097" 
+                    href="/archive/?tag=MySQL"
+                    title="MySQL"
+                    rel="12">MySQL</a>
+        
+                <a data-sort="0101" 
+                    href="/archive/?tag=%E5%A4%9A%E7%BA%BF%E7%A8%8B"
+                    title="多线程"
+                    rel="8">多线程</a>
+        
+                <a data-sort="0102" 
+                    href="/archive/?tag=Spring"
+                    title="Spring"
+                    rel="7">Spring</a>
+        
+                <a data-sort="0105" 
+                    href="/archive/?tag=%E8%AE%BE%E8%AE%A1%E6%A8%A1%E5%BC%8F"
+                    title="设计模式"
+                    rel="4">设计模式</a>
+        
+                <a data-sort="0105" 
+                    href="/archive/?tag=Redis"
+                    title="Redis"
+                    rel="4">Redis</a>
+        
+                <a data-sort="0105" 
+                    href="/archive/?tag=SpringBoot"
+                    title="SpringBoot"
+                    rel="4">SpringBoot</a>
+        
+                <a data-sort="0105" 
+                    href="/archive/?tag=Zookeeper"
+                    title="Zookeeper"
+                    rel="4">Zookeeper</a>
+        
+                <a data-sort="0106" 
+                    href="/archive/?tag=%E5%BE%AE%E6%9C%8D%E5%8A%A1"
+                    title="微服务"
+                    rel="3">微服务</a>
+        
+                <a data-sort="0106" 
+                    href="/archive/?tag=%E7%AE%97%E6%B3%95"
+                    title="算法"
+                    rel="3">算法</a>
+        
+                <a data-sort="0106" 
+                    href="/archive/?tag=Docker"
+                    title="Docker"
+                    rel="3">Docker</a>
+        
+                <a data-sort="0107" 
+                    href="/archive/?tag=%E5%B7%A5%E4%BD%9C%E9%A1%B9%E7%9B%AE%E6%80%9D%E8%80%83"
+                    title="工作项目思考"
+                    rel="2">工作项目思考</a>
+        
+                <a data-sort="0107" 
+                    href="/archive/?tag=%E7%BA%BF%E4%B8%8A%E4%BA%8B%E6%95%85"
+                    title="线上事故"
+                    rel="2">线上事故</a>
+        
+                <a data-sort="0107" 
+                    href="/archive/?tag=ChatGPT"
+                    title="ChatGPT"
+                    rel="2">ChatGPT</a>
+        
+                <a data-sort="0107" 
+                    href="/archive/?tag=Java"
+                    title="Java"
+                    rel="2">Java</a>
+        
+                <a data-sort="0107" 
+                    href="/archive/?tag=MQTT"
+                    title="MQTT"
+                    rel="2">MQTT</a>
+        
+                <a data-sort="0107" 
+                    href="/archive/?tag=MyBatis"
+                    title="MyBatis"
+                    rel="2">MyBatis</a>
+        
+                <a data-sort="0107" 
+                    href="/archive/?tag=NIO"
+                    title="NIO"
+                    rel="2">NIO</a>
+        
+                <a data-sort="0107" 
+                    href="/archive/?tag=Netty"
+                    title="Netty"
+                    rel="2">Netty</a>
+        
+                <a data-sort="0107" 
+                    href="/archive/?tag=SpringCloud"
+                    title="SpringCloud"
+                    rel="2">SpringCloud</a>
+        
+                <a data-sort="0107" 
+                    href="/archive/?tag=SpringCloud-GateWay"
+                    title="SpringCloud-GateWay"
+                    rel="2">SpringCloud-GateWay</a>
+        
+                <a data-sort="0107" 
+                    href="/archive/?tag=k8s"
+                    title="k8s"
+                    rel="2">k8s
+    </div>
+</section>
+
+
+                <!-- Friends Blog -->
+<!--                -->
+            </div>
+        </div>
+    </div>
+</article>
+
+<!-- add support for mathjax by voleking-->
+
+
+
+<!-- Page-view counter: Busuanzi does not accept localhost or 127.0.0.1. -->
+<script src="https://cdn.busuanzi.cc/busuanzi/3.6.9/busuanzi.min.js" defer></script>
+
+
+
+
+
+<!-- async load function -->
+<script>
+    function async(u, c) {
+      var d = document, t = 'script',
+          o = d.createElement(t),
+          s = d.getElementsByTagName(t)[0];
+      o.src = u;
+      if (c) { o.addEventListener('load', function (e) { c(null, e); }, false); }
+      s.parentNode.insertBefore(o, s);
+    }
+</script>
+<!-- anchor-js, Doc:http://bryanbraun.github.io/anchorjs/ -->
+<script>
+    async("//cdnjs.cloudflare.com/ajax/libs/anchor-js/1.1.1/anchor.min.js",function(){
+        anchors.options = {
+          visible: 'always',
+          placement: 'right',
+          icon: '#'
+        };
+        anchors.add().remove('.intro-header h1').remove('.subheading').remove('.sidebar-container h5');
+    })
+</script>
+<style>
+    /* place left on bigger screen */
+    @media all and (min-width: 800px) {
+        .anchorjs-link{
+            position: absolute;
+            left: -0.75em;
+            font-size: 1.1em;
+            margin-top : -0.1em;
+        }
+    }
+</style>
+
+
+
+    <!-- Footer -->
+<footer>
+    <div class="container">
+        <div class="row">
+            <div class="col-lg-8 col-lg-offset-2 col-md-10 col-md-offset-1">
+                <!-- &lt;!&ndash; SNS Link &ndash;&gt;
+                
+
+
+<ul class="list-inline text-center">
+
+
+  
+
+</ul> -->
+
+                <p class="copyright text-muted">
+                    <!-- Copyright &copy; jamie Blog 2026
+                    <br> -->
+                    Copyright &copy; 2016–2026 jamie Blog<br>
+                    Powered by <a href="/about/">jamie</a>
+               </p>
+           </div>
+       </div>
+   </div>
+</footer>
+
+<!-- jQuery -->
+<script src="/js/jquery.min.js "></script>
+
+<!-- Bootstrap Core JavaScript -->
+<!-- Currently, only navbar scroll-down effect at desktop still depends on this -->
+<script src="/js/bootstrap.min.js "></script>
+
+<!-- Custom Theme JavaScript -->
+<script src="/js/hux-blog.min.js "></script>
+<script src="/js/blog-search.js"></script>
+
+
+<!-- Article image preview -->
+<script src="/js/post-image-preview.js"></script>
+
+
+<!-- Service Worker -->
+
+<script src="/js/snackbar.js "></script>
+<script src="/js/sw-registration.js "></script>
+
+
+
+
+<!-- async load function -->
+<script>
+    function async(u, c) {
+      var d = document, t = 'script',
+          o = d.createElement(t),
+          s = d.getElementsByTagName(t)[0];
+      o.src = u;
+      if (c) { o.addEventListener('load', function (e) { c(null, e); }, false); }
+      s.parentNode.insertBefore(o, s);
+    }
+</script>
+
+<!--
+     Because of the native support for backtick-style fenced code blocks
+     right within the Markdown is landed in Github Pages,
+     From V1.6, There is no need for Highlight.js,
+     so Huxblog drops it officially.
+
+     - https://github.com/blog/2100-github-pages-now-faster-and-simpler-with-jekyll-3-0
+     - https://help.github.com/articles/creating-and-highlighting-code-blocks/
+     - https://github.com/jneen/rouge/wiki/list-of-supported-languages-and-lexers
+-->
+<!--
+    <script>
+        async("http://cdn.bootcss.com/highlight.js/8.6/highlight.min.js", function(){
+            hljs.initHighlightingOnLoad();
+        })
+    </script>
+    <link href="http://cdn.bootcss.com/highlight.js/8.6/styles/github.min.css" rel="stylesheet">
+-->
+
+
+
+
+
+<!--fastClick.js -->
+<!-- <script>
+    async("//cdnjs.cloudflare.com/ajax/libs/fastclick/1.0.6/fastclick.min.js", function(){
+        var $nav = document.querySelector("nav");
+        if($nav) FastClick.attach($nav);
+    })
+</script> -->
+
+
+<!-- Google Analytics -->
+
+<script>
+    // dynamic User by Hux
+    var _gaId = 'UA-49627206-1';
+    var _gaDomain = 'jamie.me';
+
+    // Originial
+    (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+    (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+    m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+    });
+    // (window,document,'script','//www.google-analytics.com/analytics.js','ga');
+
+    ga('create', _gaId, _gaDomain);
+    ga('send', 'pageview');
+</script>
+
+
+
+<!-- Baidu Tongji -->
+
+
+
+<!-- Side Catalog -->
+
+<script type="text/javascript">
+    function generateCatalog (selector) {
+
+        // interop with multilangual 
+        if ('' == 'true') {
+            _containerSelector = 'div.post-container.active'
+        } else {
+            _containerSelector = 'div.post-container'
+        }
+
+        // init
+        var P = $(_containerSelector),a,n,t,l,i,c;
+        a = P.find('h1,h2,h3,h4,h5,h6');
+
+        // clean
+        $(selector).html('')
+
+        // appending
+        a.each(function () {
+            n = $(this).prop('tagName').toLowerCase();
+            i = "#"+$(this).prop('id');
+            t = $(this).text();
+            c = $('<a href="'+i+'" rel="nofollow">'+t+'</a>');
+            l = $('<li class="'+n+'_nav"></li>').append(c);
+            $(selector).append(l);
+        });
+        return true;
+    }
+
+    generateCatalog(".catalog-body");
+
+    // toggle side catalog
+    $(".catalog-toggle").click((function(e){
+        e.preventDefault();
+        $('.side-catalog').toggleClass("fold")
+    }))
+
+    /*
+     * Doc: https://github.com/davist11/jQuery-One-Page-Nav
+     * Fork by Hux to support padding
+     */
+    async("/js/jquery.nav.js", function () {
+        $('.catalog-body').onePageNav({
+            currentClass: "active",
+            changeHash: !1,
+            easing: "swing",
+            filter: "",
+            scrollSpeed: 700,
+            scrollOffset: 0,
+            scrollThreshold: .2,
+            begin: null,
+            end: null,
+            scrollChange: null,
+            padding: 80
+        });
+    });
+</script>
+
+
+
+<!-- Multi-Lingual -->
+
+
+
+
+<!-- Image to hack wechat -->
+<!--<img src="/img/icon_wechat.png" width="0" height="0" />-->
+<!-- Migrate from head to bottom, no longer block render and still work -->
+
+</body>
+
+</html>

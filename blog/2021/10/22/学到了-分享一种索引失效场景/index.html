@@ -1,0 +1,1281 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="baidu-site-verification" content="code-8XHgqNvUKa" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+    <meta name="description" content="关于后端程序设计 | 这里是 jamie 的个人博客。">
+    <meta name="keywords"  content="jamie, java, spring, jamie的博客, 博客, 个人网站, 互联网, 后端, jamie's blog">
+    <meta name="theme-color" content="#000000">
+
+    <!-- Apply the saved theme before rendering to avoid a color flash. -->
+    <script>
+        (function () {
+            var theme = null;
+            try {
+                theme = localStorage.getItem('jamie-blog-theme');
+            } catch (error) {}
+
+            if (['classic', 'eye', 'dark'].indexOf(theme) === -1) {
+                theme = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches
+                    ? 'dark'
+                    : 'classic';
+            }
+
+            document.documentElement.setAttribute('data-theme', theme);
+        })();
+    </script>
+    
+    <!-- Open Graph -->
+    <meta property="og:title" content="学到了，分享一种索引失效场景 - jamie的博客 | jamie Blog">
+    
+    <meta property="og:type" content="article">
+    <meta property="og:description" content="1. 前言
+嘻嘻！有一段时间没有更新了，一方面是由于这段时间工作生活的确比较忙，事情比较多；二方面是自己知识的确匮乏，没有找到适合写的东西。不过，今天有一点空，工作上的本次迭代，我昨天提前干了，今天就可以抽出点时间。
+
+">
+    
+    <meta property="article:published_time" content="2021-10-22T00:00:00Z">
+    
+    
+    
+    <meta property="article:tag" content="MySQL">
+    
+    
+    <meta property="og:image" content="https://jinw389-lab.github.io/images/wexin.png">
+    <meta property="og:url" content="https://jinw389-lab.github.io/blog/2021/10/22/%E5%AD%A6%E5%88%B0%E4%BA%86-%E5%88%86%E4%BA%AB%E4%B8%80%E7%A7%8D%E7%B4%A2%E5%BC%95%E5%A4%B1%E6%95%88%E5%9C%BA%E6%99%AF/">
+    <meta property="og:site_name" content="jamie的博客 | jamie Blog">
+    
+    <title>学到了，分享一种索引失效场景 - jamie的博客 | jamie Blog</title>
+
+    <!-- Web App Manifest -->
+    <link rel="manifest" href="/pwa/manifest.json">
+
+    <!-- Favicon -->
+    <link rel="shortcut icon" href="/img/logo.jpg">
+    
+    <!-- Canonical URL -->
+    <link rel="canonical" href="https://jinw389-lab.github.io/blog/2021/10/22/%E5%AD%A6%E5%88%B0%E4%BA%86-%E5%88%86%E4%BA%AB%E4%B8%80%E7%A7%8D%E7%B4%A2%E5%BC%95%E5%A4%B1%E6%95%88%E5%9C%BA%E6%99%AF/">
+
+    <!-- Bootstrap Core CSS -->
+    <link rel="stylesheet" href="/css/bootstrap.min.css">
+
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="/css/hux-blog.min.css">
+    <link rel="stylesheet" href="/css/interaction.css">
+    <link rel="stylesheet" href="/css/themes.css">
+    <link rel="stylesheet" href="/css/search.css">
+    <script src="/js/theme-switcher.js" defer></script>
+
+    <!-- Custom Fonts -->
+    <!-- <link href="http://maxcdn.bootstrapcdn.com/font-awesome/4.3.0/css/font-awesome.min.css" rel="stylesheet" type="text/css"> -->
+    <!-- Hux change font-awesome CDN to qiniu -->
+    <!-- <link href="//cdnjs.cloudflare.com/ajax/libs/font-awesome/4.6.3/css/font-awesome.min.css" rel="stylesheet" type="text/css"> -->
+
+
+    <!-- HTML5 Shim and Respond.js IE8 support of HTML5 elements and media queries -->
+    <!-- WARNING: Respond.js doesn't work if you view the page via file:// -->
+    <!--[if lt IE 9]>
+        <script src="https://oss.maxcdn.com/libs/html5shiv/3.7.0/html5shiv.js"></script>
+        <script src="https://oss.maxcdn.com/libs/respond.js/1.4.2/respond.min.js"></script>
+    <![endif]-->
+
+    <!-- ga & ba script hoook -->
+    <script></script>
+</head>
+
+
+<!-- hack iOS CSS :active style -->
+<body ontouchstart="">
+
+    <!-- Navigation -->
+
+<nav class="navbar navbar-default navbar-custom navbar-fixed-top">
+
+    <div class="container-fluid">
+        <!-- Brand and toggle get grouped for better mobile display -->
+        <div class="navbar-header page-scroll">
+            <button type="button" class="navbar-toggle">
+                <span class="sr-only">Toggle navigation</span>
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+            </button>
+            <a class="navbar-brand" href="/">jamie Blog</a>
+        </div>
+
+        <!-- Collect the nav links, forms, and other content for toggling -->
+        <div id="huxblog_navbar">
+            <div class="navbar-collapse">
+                <ul class="nav navbar-nav navbar-right">
+                    <li>
+                        <a href="/">首页</a>
+                    </li>
+                    
+                    
+                    
+                    
+                    <li>
+                        
+                            <a href="/about/">关于</a>
+                        
+                    </li>
+                    
+                    
+                    
+                    <li>
+                        
+                        <a href="/archive/">归档</a>
+                        
+                    </li>
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                </ul>
+            </div>
+        </div>
+        <!-- /.navbar-collapse -->
+    </div>
+    <!-- /.container -->
+</nav>
+<div class="floating-tools edge-right is-collapsed" data-floating-tools>
+    <button class="floating-tools-handle" type="button" data-floating-tools-toggle aria-expanded="false" aria-label="展开快捷工具，可拖动调整位置" title="点击展开，拖动调整位置">
+    </button>
+    <div class="floating-tools-panel">
+        <a class="floating-tool floating-home-button" href="/" aria-label="首页" title="首页">
+            <svg class="floating-nav-icon" viewBox="0 0 20 20" aria-hidden="true">
+                <path d="m3 9.5 7-6 7 6"></path>
+                <path d="M5.5 8.5V17h9V8.5M8.5 17v-4.5h3V17"></path>
+            </svg>
+            <span class="floating-tool-label">首页</span>
+        </a>
+        <a class="floating-tool floating-about-button" href="/about/" aria-label="关于" title="关于">
+            <svg class="floating-nav-icon" viewBox="0 0 20 20" aria-hidden="true">
+                <circle cx="10" cy="6.5" r="3"></circle>
+                <path d="M4.5 17c.45-3.15 2.3-4.75 5.5-4.75s5.05 1.6 5.5 4.75"></path>
+            </svg>
+            <span class="floating-tool-label">关于</span>
+        </a>
+        <a class="floating-tool floating-archive-button" href="/archive/" aria-label="归档" title="归档">
+            <svg class="floating-nav-icon" viewBox="0 0 20 20" aria-hidden="true">
+                <path d="M3 5.5h14V17H3zM2.5 3h15v3h-15zM8 9.5h4"></path>
+            </svg>
+            <span class="floating-tool-label">归档</span>
+        </a>
+        <button class="floating-tool floating-search-button" type="button" data-search-open aria-label="打开文章搜索" title="搜索">
+            <svg class="floating-search-icon" viewBox="0 0 24 24" aria-hidden="true">
+                <circle cx="11" cy="11" r="6.5"></circle>
+                <path d="m16 16 4 4"></path>
+            </svg>
+            <span class="floating-tool-label">搜索</span>
+        </button>
+        <button class="floating-tool theme-switcher" type="button" data-theme-toggle aria-live="polite">
+            <span class="theme-switcher-icon" data-theme-icon aria-hidden="true">◐</span>
+            <span class="floating-tool-label" data-theme-label>经典</span>
+        </button>
+    </div>
+</div>
+<script>
+    // Drop Bootstarp low-performance Navbar
+    // Use customize navbar with high-quality material design animation
+    // in high-perf jank-free CSS3 implementation
+    var $body   = document.body;
+    var $toggle = document.querySelector('.navbar-toggle');
+    var $navbar = document.querySelector('#huxblog_navbar');
+    var $collapse = document.querySelector('.navbar-collapse');
+
+    var __HuxNav__ = {
+        close: function(){
+            $navbar.className = " ";
+            // wait until animation end.
+            setTimeout(function(){
+                // prevent frequently toggle
+                if($navbar.className.indexOf('in') < 0) {
+                    $collapse.style.height = "0px"
+                }
+            },400)
+        },
+        open: function(){
+            $collapse.style.height = "auto"
+            $navbar.className += " in";
+        }
+    }
+
+    // Bind Event
+    $toggle.addEventListener('click', function(e){
+        if ($navbar.className.indexOf('in') > 0) {
+            __HuxNav__.close()
+        }else{
+            __HuxNav__.open()
+        }
+    })
+
+    /**
+     * Since Fastclick is used to delegate 'touchstart' globally
+     * to hack 300ms delay in iOS by performing a fake 'click',
+     * Using 'e.stopPropagation' to stop 'touchstart' event from 
+     * $toggle/$collapse will break global delegation.
+     * 
+     * Instead, we use a 'e.target' filter to prevent handler
+     * added to document close HuxNav.  
+     *
+     * Also, we use 'click' instead of 'touchstart' as compromise
+     */
+    document.addEventListener('click', function(e){
+        if(e.target == $toggle) return;
+        if(e.target.className == 'icon-bar') return;
+        __HuxNav__.close();
+    })
+</script>
+
+    <div class="blog-search" data-blog-search data-index-url="/search.json" hidden>
+    <div class="blog-search-backdrop" data-search-close></div>
+    <section class="blog-search-dialog" role="dialog" aria-modal="true" aria-labelledby="blog-search-title">
+        <h2 class="sr-only" id="blog-search-title">搜索文章</h2>
+        <div class="blog-search-input-row">
+            <svg class="blog-search-icon" viewBox="0 0 24 24" aria-hidden="true">
+                <circle cx="11" cy="11" r="6.5"></circle>
+                <path d="m16 16 4 4"></path>
+            </svg>
+            <input
+                class="blog-search-input"
+                type="search"
+                inputmode="search"
+                autocomplete="off"
+                spellcheck="false"
+                placeholder="搜索标题、标签或文章内容"
+                aria-label="搜索文章"
+                aria-controls="blog-search-results"
+            >
+            <button class="blog-search-close" type="button" data-search-close aria-label="关闭搜索">×</button>
+        </div>
+        <div class="blog-search-status" data-search-status aria-live="polite">输入关键词开始搜索</div>
+        <div class="blog-search-results" id="blog-search-results" data-search-results role="listbox"></div>
+        <div class="blog-search-help" aria-hidden="true">
+            <span><kbd>↑</kbd><kbd>↓</kbd> 选择</span>
+            <span><kbd>Enter</kbd> 打开</span>
+            <span><kbd>Esc</kbd> 关闭</span>
+        </div>
+    </section>
+</div>
+
+
+    <!-- Image to hack wechat -->
+<!-- <img src="/img/icon_wechat.png" width="0" height="0"> -->
+<!-- <img src="/img/home-bg.jpg" width="0" height="0"> -->
+
+<!-- Post Header -->
+
+
+
+<style type="text/css">
+    header.intro-header{
+        position: relative;
+        background-image: url('/img/home-bg.jpg');
+        background: ;
+    }
+
+    
+</style>
+
+<header class="intro-header" >
+
+    <div class="header-mask"></div>
+    
+    <div class="container">
+        <div class="row">
+            <div class="col-lg-8 col-lg-offset-2 col-md-10 col-md-offset-1">
+                <div class="post-heading">
+                    <div class="tags">
+                        
+                        <a class="tag" href="/archive/?tag=MySQL" title="MySQL">MySQL</a>
+                        
+                    </div>
+                    <h1>学到了，分享一种索引失效场景</h1>
+                    
+                    <h2 class="subheading"></h2>
+                    <span class="meta post-meta-line">
+                        Posted by jamie Blog on 2021-10-22
+                        <span class="post-meta-separator" aria-hidden="true">·</span>
+                        <span class="post-view-count" aria-label="文章阅读量">阅读 <span id="busuanzi_page_pv">--</span> 次</span>
+                    </span>
+                </div>
+            </div>
+        </div>
+    </div>
+</header>
+
+
+
+
+
+
+
+<!-- Post Content -->
+<article>
+    <div class="container">
+        <div class="row">
+
+    <!-- Post Container -->
+            <div class="
+                col-lg-8 col-lg-offset-2
+                col-md-10 col-md-offset-1
+                post-container">
+
+                <!-- Multi-Lingual -->
+                
+
+				<h3 id="1-前言">1. 前言</h3>
+<p>嘻嘻！有一段时间没有更新了，一方面是由于这段时间工作生活的确比较忙，事情比较多；二方面是自己知识的确匮乏，没有找到适合写的东西。不过，今天有一点空，工作上的本次迭代，我昨天提前干了，今天就可以抽出点时间。</p>
+
+<p>我们都知道，在使用 MySql 的时候，就算我们建了索引，实际在查询的过程中，也不一定能走索引。那么在什么情况下会导致索引失效呢？我想大部分朋友都能说上的几点。有一些我们比较常见的，这也算我们面试的时候，经常被问到的问题。我下面就简单整理几个常见的情况。</p>
+
+<h3 id="2-常见索引失效汇总">2. 常见索引失效汇总</h3>
+
+<p><img src="/images/mysql/21.png" alt="" /></p>
+
+<p>下面也来简单描述演示一下这几种情况。</p>
+
+<p>我们先在数据库中建一个表，并创建索引，添加几条数据</p>
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code><table class="rouge-table"><tbody><tr><td class="rouge-gutter gl"><pre class="lineno">1
+2
+3
+4
+5
+6
+7
+8
+9
+10
+11
+12
+13
+</pre></td><td class="rouge-code"><pre>CREATE TABLE `test1` (
+  `id` bigint NOT NULL,
+  `code` varchar(30) NOT NULL,
+  `age` int NOT NULL,
+  `name` varchar(30) NOT NULL,
+  `height` int NOT NULL,
+  PRIMARY KEY (`id`),
+  KEY `idx_code_age_name` (`code`,`age`,`name`) USING BTREE,
+  KEY `idx_height` (`height`) USING BTREE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8
+
+INSERT INTO `test1`(`id`, `code`, `name`, `age`,`height`) VALUES (1, '001', '张飞', 18,7);
+INSERT INTO `test1`(`id`, `code`, `name`, `age`,`height`) VALUES (2, '002', '关羽', 19,8);
+</pre></td></tr></tbody></table></code></pre></div></div>
+
+<p>查询数据结果集：</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code><table class="rouge-table"><tbody><tr><td class="rouge-gutter gl"><pre class="lineno">1
+2
+3
+4
+5
+6
+7
+8
+9
+10
+</pre></td><td class="rouge-code"><pre>mysql&gt; select * from test1;
++----+------+-----+------+--------+
+| id | code | age | name | height |
++----+------+-----+------+--------+
+|  1 | 001  |  18 | 张飞 |      7 |
+|  2 | 002  |  19 | 关羽 |      8 |
++----+------+-----+------+--------+
+2 rows in set
+
+mysql&gt; 
+</pre></td></tr></tbody></table></code></pre></div></div>
+
+<h4 id="21-不满足最左匹配原则">2.1 不满足最左匹配原则</h4>
+<p>我们先来一个满足的情况，由于我们有两个索引，就拿idx_code_age_name来演示</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code><table class="rouge-table"><tbody><tr><td class="rouge-gutter gl"><pre class="lineno">1
+2
+3
+4
+5
+6
+7
+8
+9
+10
+11
+12
+13
+14
+15
+16
+17
+18
+19
+20
+21
+22
+23
+</pre></td><td class="rouge-code"><pre># 满足的情况
+mysql&gt; explai
+n select * from test1 where code = '001' and age = 18 and name = '张飞';
++----+-------------+-------+------------+------+-------------------+-------------------+---------+-------------------+------+----------+-------+
+| id | select_type | table | partitions | type | possible_keys     | key               | key_len | ref               | rows | filtered | Extra |
++----+-------------+-------+------------+------+-------------------+-------------------+---------+-------------------+------+----------+-------+
+|  1 | SIMPLE      | test1 | NULL       | ref  | idx_code_age_name | idx_code_age_name | 188     | const,const,const |    1 |      100 | NULL  |
++----+-------------+-------+------------+------+-------------------+-------------------+---------+-------------------+------+----------+-------+
+1 row in set
+
+# 不满足 去掉了code，进行了全表扫描
+
+mysql&gt; explain select * from test1 where
+ age = 18 and name = '张飞';
++----+-------------+-------+------------+------+---------------+------+---------+------+------+----------+-------------+
+| id | select_type | table | partitions | type | possible_keys | key  | key_len | ref  | rows | filtered | Extra       |
++----+-------------+-------+------------+------+---------------+------+---------+------+------+----------+-------------+
+|  1 | SIMPLE      | test1 | NULL       | ALL  | NULL          | NULL | NULL    | NULL |    2 |       50 | Using where |
++----+-------------+-------+------------+------+---------------+------+---------+------+------+----------+-------------+
+1 row in set
+
+mysql&gt; 
+mysql&gt; 
+</pre></td></tr></tbody></table></code></pre></div></div>
+
+<p>下面留个疑问   <br />
+<code class="language-plaintext highlighter-rouge">select code
+ from test1 where age = 18 and name = '张飞';</code>    <br />
+ 这条sql会走索引吗？    <br />
+ <code class="language-plaintext highlighter-rouge">select height
+ from test1 where age = 18 and name = '张飞';</code>  <br />
+ 这条呢？为什么？</p>
+
+<h4 id="22-范围列没有放最后">2.2 范围列没有放最后</h4>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code><table class="rouge-table"><tbody><tr><td class="rouge-gutter gl"><pre class="lineno">1
+2
+3
+4
+5
+6
+7
+8
+</pre></td><td class="rouge-code"><pre>EXPLAIN  select * from test1 
+where  code='001' and age&gt;18  and  name='张飞';
++----+-------------+-------+------------+-------+-------------------+-------------------+---------+------+------+----------+-----------------------+
+| id | select_type | table | partitions | type  | possible_keys     | key               | key_len | ref  | rows | filtered | Extra                 |
++----+-------------+-------+------------+-------+-------------------+-------------------+---------+------+------+----------+-----------------------+
+|  1 | SIMPLE      | test1 | NULL       | range | idx_code_age_name | idx_code_age_name | 96      | NULL |    1 |       50 | Using index condition |
++----+-------------+-------+------------+-------+-------------------+-------------------+---------+------+------+----------+-----------------------+
+1 row in set
+</pre></td></tr></tbody></table></code></pre></div></div>
+
+<p><code class="language-plaintext highlighter-rouge">select * from test1 
+where  code='001' and age&gt;18  and  name='张飞' ;</code>语句的执行计划可以看出用到了索引idx_code_age_name,但是key_len为96，比上面的188少，索引用到的引用不是很充分，只用到了（code,age）索引，age没有用到。</p>
+
+<p>那我们把age的范围查询放最后<code class="language-plaintext highlighter-rouge">EXPLAIN  select * from test1 
+where code='001' and  name='张飞' and age&gt;18 ;</code></p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code><table class="rouge-table"><tbody><tr><td class="rouge-gutter gl"><pre class="lineno">1
+2
+3
+4
+5
+6
+7
+</pre></td><td class="rouge-code"><pre>mysql&gt; EXPLAIN  select * from test1 where code='001' and  name='张飞' and age&gt;18 ;
++----+-------------+-------+------------+-------+-------------------+-------------------+---------+------+------+----------+-----------------------+
+| id | select_type | table | partitions | type  | possible_keys     | key               | key_len | ref  | rows | filtered | Extra                 |
++----+-------------+-------+------------+-------+-------------------+-------------------+---------+------+------+----------+-----------------------+
+|  1 | SIMPLE      | test1 | NULL       | range | idx_code_age_name | idx_code_age_name | 96      | NULL |    1 |       50 | Using index condition |
++----+-------------+-------+------------+-------+-------------------+-------------------+---------+------+------+----------+-----------------------+
+1 row in set
+</pre></td></tr></tbody></table></code></pre></div></div>
+
+<p><strong>结果竟然和之前相同，为什么呢？</strong></p>
+
+<p>我们来看看之前创建的索引字段顺序为<code class="language-plaintext highlighter-rouge">code,name,age</code>，我们将其改为<code class="language-plaintext highlighter-rouge">code,age,name</code>的顺序。</p>
+
+<p>再次执行查看执行计划</p>
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code><table class="rouge-table"><tbody><tr><td class="rouge-gutter gl"><pre class="lineno">1
+2
+3
+4
+5
+6
+7
+</pre></td><td class="rouge-code"><pre>EXPLAIN  select * from test1 where code='001' and  name='张飞' and age&gt;18 ;
++----+-------------+-------+------------+-------+-------------------+-------------------+---------+------+------+----------+-----------------------+
+| id | select_type | table | partitions | type  | possible_keys     | key               | key_len | ref  | rows | filtered | Extra                 |
++----+-------------+-------+------------+-------+-------------------+-------------------+---------+------+------+----------+-----------------------+
+|  1 | SIMPLE      | test1 | NULL       | range | idx_code_age_name | idx_code_age_name | 188     | NULL |    1 |      100 | Using index condition |
++----+-------------+-------+------------+-------+-------------------+-------------------+---------+------+------+----------+-----------------------+
+1 row in set
+</pre></td></tr></tbody></table></code></pre></div></div>
+<p>现在就全部应用到索引了。我们把sql中的顺序调整一下，结果也是一样。</p>
+
+<p>注意：<strong>范围查询放最后，指的是联合索引中的范围列放在最后，不是指where条件中的范围列放最后。如果联合索引中的范围列放在最后了，即使where条件中的范围列没放最后也能正常走到索引。</strong></p>
+
+<h4 id="23-使用select-">2.3 使用select *</h4>
+
+<p>这种场景是我们查询的列没有走覆盖索引的情况。</p>
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code><table class="rouge-table"><tbody><tr><td class="rouge-gutter gl"><pre class="lineno">1
+2
+3
+4
+5
+6
+7
+8
+9
+10
+11
+12
+13
+14
+15
+</pre></td><td class="rouge-code"><pre>mysql&gt; EXPLAIN select * from test1;
++----+-------------+-------+------------+------+---------------+------+---------+------+------+----------+-------+
+| id | select_type | table | partitions | type | possible_keys | key  | key_len | ref  | rows | filtered | Extra |
++----+-------------+-------+------------+------+---------------+------+---------+------+------+----------+-------+
+|  1 | SIMPLE      | test1 | NULL       | ALL  | NULL          | NULL | NULL    | NULL |    2 |      100 | NULL  |
++----+-------------+-------+------------+------+---------------+------+---------+------+------+----------+-------+
+1 row in set
+
+mysql&gt; EXPLAIN select age,name from test1;
++----+-------------+-------+------------+-------+---------------+-------------------+---------+------+------+----------+-------------+
+| id | select_type | table | partitions | type  | possible_keys | key               | key_len | ref  | rows | filtered | Extra       |
++----+-------------+-------+------------+-------+---------------+-------------------+---------+------+------+----------+-------------+
+|  1 | SIMPLE      | test1 | NULL       | index | NULL          | idx_code_age_name | 188     | NULL |    2 |      100 | Using index |
++----+-------------+-------+------------+-------+---------------+-------------------+---------+------+------+----------+-------------+
+1 row in set
+</pre></td></tr></tbody></table></code></pre></div></div>
+
+<p>如果 select 的列不只包含索引列，则需要 回表 ，即回到表中再查询出其他列，效率相当更低一些。 select * 大概率需要查询非索引列，需要 回表 ，因此要少用。</p>
+
+<h4 id="24-索引列上有计算">2.4 索引列上有计算</h4>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code><table class="rouge-table"><tbody><tr><td class="rouge-gutter gl"><pre class="lineno">1
+2
+3
+4
+5
+6
+7
+</pre></td><td class="rouge-code"><pre>mysql&gt; explain  select * from test1 where height+1 =7;
++----+-------------+-------+------------+------+---------------+------+---------+------+------+----------+-------------+
+| id | select_type | table | partitions | type | possible_keys | key  | key_len | ref  | rows | filtered | Extra       |
++----+-------------+-------+------------+------+---------------+------+---------+------+------+----------+-------------+
+|  1 | SIMPLE      | test1 | NULL       | ALL  | NULL          | NULL | NULL    | NULL |    2 |      100 | Using where |
++----+-------------+-------+------------+------+---------------+------+---------+------+------+----------+-------------+
+1 row in set
+</pre></td></tr></tbody></table></code></pre></div></div>
+
+<h4 id="25-索引列上使用了函数">2.5 索引列上使用了函数</h4>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code><table class="rouge-table"><tbody><tr><td class="rouge-gutter gl"><pre class="lineno">1
+2
+3
+4
+5
+6
+7
+</pre></td><td class="rouge-code"><pre>mysql&gt; explain  select * from test1 where SUBSTR(height,1,1)=8;
++----+-------------+-------+------------+------+---------------+------+---------+------+------+----------+-------------+
+| id | select_type | table | partitions | type | possible_keys | key  | key_len | ref  | rows | filtered | Extra       |
++----+-------------+-------+------------+------+---------------+------+---------+------+------+----------+-------------+
+|  1 | SIMPLE      | test1 | NULL       | ALL  | NULL          | NULL | NULL    | NULL |    2 |      100 | Using where |
++----+-------------+-------+------------+------+---------------+------+---------+------+------+----------+-------------+
+1 row in set
+</pre></td></tr></tbody></table></code></pre></div></div>
+
+<h4 id="26-字符类型没有加引号">2.6 字符类型没有加引号</h4>
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code><table class="rouge-table"><tbody><tr><td class="rouge-gutter gl"><pre class="lineno">1
+2
+3
+4
+5
+6
+7
+</pre></td><td class="rouge-code"><pre>explain select * from test1 where name = 123;
++----+-------------+-------+------------+------+---------------+------+---------+------+------+----------+-------------+
+| id | select_type | table | partitions | type | possible_keys | key  | key_len | ref  | rows | filtered | Extra       |
++----+-------------+-------+------------+------+---------------+------+---------+------+------+----------+-------------+
+|  1 | SIMPLE      | test1 | NULL       | ALL  | NULL          | NULL | NULL    | NULL |    2 |       50 | Using where |
++----+-------------+-------+------------+------+---------------+------+---------+------+------+----------+-------------+
+1 row in set
+</pre></td></tr></tbody></table></code></pre></div></div>
+
+<h4 id="27-用is-null和is-not-null没注意字段是否允许为空">2.7 用is null和is not null没注意字段是否允许为空</h4>
+
+<p>我们创建表的时候字段都是不能为null的。</p>
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code><table class="rouge-table"><tbody><tr><td class="rouge-gutter gl"><pre class="lineno">1
+2
+3
+4
+5
+6
+7
+</pre></td><td class="rouge-code"><pre>mysql&gt; explain  select * from test1 where  height is  null;
++----+-------------+-------+------------+------+---------------+------+---------+------+------+----------+------------------+
+| id | select_type | table | partitions | type | possible_keys | key  | key_len | ref  | rows | filtered | Extra            |
++----+-------------+-------+------------+------+---------------+------+---------+------+------+----------+------------------+
+|  1 | SIMPLE      | NULL  | NULL       | NULL | NULL          | NULL | NULL    | NULL | NULL | NULL     | Impossible WHERE |
++----+-------------+-------+------------+------+---------------+------+---------+------+------+----------+------------------+
+1 row in set
+</pre></td></tr></tbody></table></code></pre></div></div>
+<p>我们将height字段改为可以为空后，再次执行查看执行计划，则可以看到会用到索引</p>
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code><table class="rouge-table"><tbody><tr><td class="rouge-gutter gl"><pre class="lineno">1
+2
+3
+4
+5
+6
+7
+</pre></td><td class="rouge-code"><pre>mysql&gt; explain  select * from test1 where  height is  null;
++----+-------------+-------+------------+------+---------------+------------+---------+-------+------+----------+-----------------------+
+| id | select_type | table | partitions | type | possible_keys | key        | key_len | ref   | rows | filtered | Extra                 |
++----+-------------+-------+------------+------+---------------+------------+---------+-------+------+----------+-----------------------+
+|  1 | SIMPLE      | test1 | NULL       | ref  | idx_height    | idx_height | 5       | const |    1 |      100 | Using index condition |
++----+-------------+-------+------------+------+---------------+------------+---------+-------+------+----------+-----------------------+
+1 row in set
+</pre></td></tr></tbody></table></code></pre></div></div>
+
+<h4 id="28-like左边存在">2.8 like左边存在%</h4>
+<p>这种比较常见，就不演示了。</p>
+
+<h3 id="3-本次新发现的索引失效场景">3. 本次新发现的索引失效场景</h3>
+<p>上面说了这么多的场景，我想大多朋友都知道。但是最近在线上，我们找到了另外一种失效的场景。
+下面来看看示例：</p>
+<h4 id="31-创建表">3.1 创建表</h4>
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code><table class="rouge-table"><tbody><tr><td class="rouge-gutter gl"><pre class="lineno">1
+2
+3
+4
+5
+6
+7
+8
+9
+10
+11
+12
+13
+14
+15
+16
+17
+18
+19
+20
+21
+22
+23
+24
+25
+</pre></td><td class="rouge-code"><pre>-- 建表采用utf8字符集
+CREATE TABLE t_utf8 (
+	id INT ( 11 ) UNSIGNED NOT NULL AUTO_INCREMENT COMMENT '自增id',
+	age INT ( 11 ) COMMENT '年龄',
+	NAME VARCHAR ( 32 ) COMMENT '姓名',
+	PRIMARY KEY ( id ),
+	KEY idx_name ( NAME ),
+	KEY idx_age ( age ) 
+) ENGINE = INNODB DEFAULT CHARSET = utf8;
+
+-- 插入一条数据
+INSERT into t_utf8 (age,name) VALUES (1,'zz');
+
+-- 建表采用utf8mb4字符集
+CREATE TABLE t_utf8m (
+	id INT ( 11 ) UNSIGNED NOT NULL AUTO_INCREMENT COMMENT '自增id',
+	age INT ( 11 ) COMMENT '年龄',
+	NAME VARCHAR ( 32 ) COMMENT '姓名',
+	PRIMARY KEY ( id ),
+	KEY idx_name ( NAME ),
+	KEY idx_age ( age ) 
+) ENGINE = INNODB DEFAULT CHARSET = utf8mb4;
+
+-- 插入一条数据
+INSERT into t_utf8m (age,name) VALUES (1,'zz');
+</pre></td></tr></tbody></table></code></pre></div></div>
+
+<p>分别执行以下执行计划</p>
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code><table class="rouge-table"><tbody><tr><td class="rouge-gutter gl"><pre class="lineno">1
+2
+3
+4
+5
+6
+7
+8
+9
+10
+11
+12
+13
+14
+15
+16
+17
+18
+19
+20
+21
+22
+23
+24
+25
+26
+27
+28
+29
+30
+31
+32
+33
+34
+35
+36
+37
+</pre></td><td class="rouge-code"><pre>mysql&gt; EXPLAIN select * from t_utf8m a, t_utf8 b where a.age = b.age and a.age = 1;
++----+-------------+-------+------------+------+---------------+---------+---------+-------+------+----------+-------+
+| id | select_type | table | partitions | type | possible_keys | key     | key_len | ref   | rows | filtered | Extra |
++----+-------------+-------+------------+------+---------------+---------+---------+-------+------+----------+-------+
+|  1 | SIMPLE      | a     | NULL       | ref  | idx_age       | idx_age | 5       | const |    1 |      100 | NULL  |
+|  1 | SIMPLE      | b     | NULL       | ref  | idx_age       | idx_age | 5       | const |    1 |      100 | NULL  |
++----+-------------+-------+------------+------+---------------+---------+---------+-------+------+----------+-------+
+2 rows in set
+
+mysql&gt; EXPLAIN select * from t_utf8m a, t_utf8 b where a.age = b.age and b
+.age = 1;
++----+-------------+-------+------------+------+---------------+---------+---------+-------+------+----------+-------+
+| id | select_type | table | partitions | type | possible_keys | key     | key_len | ref   | rows | filtered | Extra |
++----+-------------+-------+------------+------+---------------+---------+---------+-------+------+----------+-------+
+|  1 | SIMPLE      | a     | NULL       | ref  | idx_age       | idx_age | 5       | const |    1 |      100 | NULL  |
+|  1 | SIMPLE      | b     | NULL       | ref  | idx_age       | idx_age | 5       | const |    1 |      100 | NULL  |
++----+-------------+-------+------------+------+---------------+---------+---------+-------+------+----------+-------+
+2 rows in set
+
+mysql&gt; EXPLAIN select * from t_utf8m a, t_utf8 b where a.name = b.name and a.name = 'zz';
++----+-------------+-------+------------+------+---------------+----------+---------+-------+------+----------+----------------------------------------------------+
+| id | select_type | table | partitions | type | possible_keys | key      | key_len | ref   | rows | filtered | Extra                                              |
++----+-------------+-------+------------+------+---------------+----------+---------+-------+------+----------+----------------------------------------------------+
+|  1 | SIMPLE      | a     | NULL       | ref  | idx_name      | idx_name | 131     | const |    1 |      100 | NULL                                               |
+|  1 | SIMPLE      | b     | NULL       | ALL  | NULL          | NULL     | NULL    | NULL  |    1 |      100 | Using where; Using join buffer (Block Nested Loop) |
++----+-------------+-------+------------+------+---------------+----------+---------+-------+------+----------+----------------------------------------------------+
+2 rows in set
+
+mysql&gt; EXPLAIN select * from t_utf8m a, t_utf8 b where a.name = b.name and b
+.name = 'zz';
++----+-------------+-------+------------+------+---------------+----------+---------+-------+------+----------+-----------------------+
+| id | select_type | table | partitions | type | possible_keys | key      | key_len | ref   | rows | filtered | Extra                 |
++----+-------------+-------+------------+------+---------------+----------+---------+-------+------+----------+-----------------------+
+|  1 | SIMPLE      | b     | NULL       | ref  | idx_name      | idx_name | 99      | const |    1 |      100 | NULL                  |
+|  1 | SIMPLE      | a     | NULL       | ref  | idx_name      | idx_name | 131     | func  |    1 |      100 | Using index condition |
++----+-------------+-------+------------+------+---------------+----------+---------+-------+------+----------+-----------------------+
+2 rows in set
+</pre></td></tr></tbody></table></code></pre></div></div>
+
+<p>结果是前两条索引生效，后两条中，只有最后一条生效。那么是什么原因导致索引失效呢？看看我们的建表语句。
+t_utf8表的字符集编码为为utf8，t_utfmb4的编码为utf8mb4。两个表的字符集编码不同。</p>
+
+<p>下面在来看看具体的执行计划
+第四个执行计划是先查询的b表后查询的a表，与第三条执行计划正好相反。</p>
+
+<p>第三条执行计划中
+先执行<code class="language-plaintext highlighter-rouge">select * from t_utf8m a where a.name = 'zz';</code>
+再执行<code class="language-plaintext highlighter-rouge">select * from t_utf8 b where b.name = 'a表的结果';</code></p>
+
+<p>第四条执行计划中
+先执行<code class="language-plaintext highlighter-rouge">select * from t_utf8 b where b.name = 'zz';</code>
+再执行<code class="language-plaintext highlighter-rouge">select * from t_utf8m a where a.name = 'b表的结果';</code></p>
+
+<p>普及个知识：</p>
+
+<ol>
+  <li>两表的字符集编码不同，在查询中会涉及到编码转换。</li>
+  <li>编码转换时，只能是<code class="language-plaintext highlighter-rouge">utf8</code>向<code class="language-plaintext highlighter-rouge">utf8mb4</code>转换。</li>
+</ol>
+
+<p>所以在执行时三个执行计划就变成了   <br />
+<code class="language-plaintext highlighter-rouge">select * from t_utf8 b where CONVERT(b.name USING utf8mb4) = 'a表的结果';</code></p>
+
+<p>第四个执行计划   <br />
+<code class="language-plaintext highlighter-rouge">select * from t_utf8m a where a.name = CONVERT('b表过滤出来的值' USING utf8mb4);</code></p>
+
+<p>可以看到索引失效的根本原因还是由于<strong>在索引字段上存在函数操作</strong>。</p>
+
+<p>那么为什么前两个执行计划为啥没有问题呢？那是由于int在两种类型下都是一致的，无效转换。</p>
+
+<h3 id="4-总结">4. 总结</h3>
+
+<p>上面由于编码不一致导致索引失效的情况，当时在线上存在，但是我们在qa上复现的时候，发现没有问题。是由于，我们qa上的表编码都是utf8mb4,而线上是utf8和utf8mb4。导致在量表关联查询的时候，索引失效。</p>
+
+<p>我们数据库中的表编码格式应该做到尽量统一。不建议同一个库存在不同的字符集编码。只要做到这一点，我们可以避免好些没必要的问题。</p>
+
+
+                <hr style="visibility: hidden;">
+                <ul class="pager">
+
+
+                    
+                    <li class="next">
+                        <a href="/blog/2021/09/06/%E5%90%8C%E4%BA%8B%E8%AF%B4MVCC%E8%A7%A3%E5%86%B3%E4%BA%86%E5%B9%BB%E8%AF%BB-%E6%88%91%E6%89%93%E7%AE%97%E5%8F%8D%E9%A9%B3%E4%BB%96/" data-toggle="tooltip" data-placement="top" title="同事说MVCC解决了幻读，我打算反驳他">
+                        下一篇<br>
+                        <span>同事说MVCC解决了幻读，我打算反驳他</span>
+                        </a>
+                    </li>
+                    
+
+                    
+                    <li class="previous">
+                        <a href="/blog/2021/11/05/%E8%B0%88%E8%B0%88MySQL-5.7.6%E6%94%AF%E6%8C%81%E7%9A%84%E5%85%A8%E6%96%87%E6%A3%80%E7%B4%A2ngram%E6%8F%92%E4%BB%B6%E7%9A%84%E4%BD%BF%E7%94%A8/" data-toggle="tooltip" data-placement="top" title="谈谈MySQL 5.7.6支持的全文检索ngram插件的使用">
+                            上一篇<br>
+                            <span>谈谈MySQL 5.7.6支持的全文检索ngram插件的使用</span>
+                        </a>
+                    </li>
+                    
+
+                </ul>
+                <hr style="visibility: hidden;">
+
+            </div>  
+
+    <!-- Side Catalog Container -->
+        
+            <div class="
+                col-lg-2 col-lg-offset-0
+                visible-lg-block
+                sidebar-container
+                catalog-container">
+                <div class="side-catalog">
+                    <hr class="hidden-sm hidden-xs">
+                    <h5>
+                        <a class="catalog-toggle" href="#">目录</a>
+                    </h5>
+                    <ul class="catalog-body"></ul>
+                </div>
+            </div>
+        
+
+    <!-- Sidebar Container -->
+            <div class="
+                col-lg-8 col-lg-offset-2
+                col-md-10 col-md-offset-1
+                sidebar-container">
+
+                <!-- Featured Tags -->
+                
+
+
+<section>
+    
+        <hr class="hidden-sm hidden-xs">
+    
+    <h5><a href="/archive/">归档</a></h5>
+    <div class="tags">
+        
+        
+        
+        </a>
+        
+        
+                <a data-sort="0099" 
+                    href="/archive/?tag=java"
+                    title="java"
+                    rel="10">java</a>
+        
+                <a data-sort="0060" 
+                    href="/archive/?tag=%E6%97%A5%E5%B8%B8%E8%AE%B0%E5%BD%95"
+                    title="日常记录"
+                    rel="49">日常记录</a>
+        
+                <a data-sort="0097" 
+                    href="/archive/?tag=MySQL"
+                    title="MySQL"
+                    rel="12">MySQL</a>
+        
+                <a data-sort="0101" 
+                    href="/archive/?tag=%E5%A4%9A%E7%BA%BF%E7%A8%8B"
+                    title="多线程"
+                    rel="8">多线程</a>
+        
+                <a data-sort="0102" 
+                    href="/archive/?tag=Spring"
+                    title="Spring"
+                    rel="7">Spring</a>
+        
+                <a data-sort="0105" 
+                    href="/archive/?tag=%E8%AE%BE%E8%AE%A1%E6%A8%A1%E5%BC%8F"
+                    title="设计模式"
+                    rel="4">设计模式</a>
+        
+                <a data-sort="0105" 
+                    href="/archive/?tag=Redis"
+                    title="Redis"
+                    rel="4">Redis</a>
+        
+                <a data-sort="0105" 
+                    href="/archive/?tag=SpringBoot"
+                    title="SpringBoot"
+                    rel="4">SpringBoot</a>
+        
+                <a data-sort="0105" 
+                    href="/archive/?tag=Zookeeper"
+                    title="Zookeeper"
+                    rel="4">Zookeeper</a>
+        
+                <a data-sort="0106" 
+                    href="/archive/?tag=%E5%BE%AE%E6%9C%8D%E5%8A%A1"
+                    title="微服务"
+                    rel="3">微服务</a>
+        
+                <a data-sort="0106" 
+                    href="/archive/?tag=%E7%AE%97%E6%B3%95"
+                    title="算法"
+                    rel="3">算法</a>
+        
+                <a data-sort="0106" 
+                    href="/archive/?tag=Docker"
+                    title="Docker"
+                    rel="3">Docker</a>
+        
+                <a data-sort="0107" 
+                    href="/archive/?tag=%E5%B7%A5%E4%BD%9C%E9%A1%B9%E7%9B%AE%E6%80%9D%E8%80%83"
+                    title="工作项目思考"
+                    rel="2">工作项目思考</a>
+        
+                <a data-sort="0107" 
+                    href="/archive/?tag=%E7%BA%BF%E4%B8%8A%E4%BA%8B%E6%95%85"
+                    title="线上事故"
+                    rel="2">线上事故</a>
+        
+                <a data-sort="0107" 
+                    href="/archive/?tag=ChatGPT"
+                    title="ChatGPT"
+                    rel="2">ChatGPT</a>
+        
+                <a data-sort="0107" 
+                    href="/archive/?tag=Java"
+                    title="Java"
+                    rel="2">Java</a>
+        
+                <a data-sort="0107" 
+                    href="/archive/?tag=MQTT"
+                    title="MQTT"
+                    rel="2">MQTT</a>
+        
+                <a data-sort="0107" 
+                    href="/archive/?tag=MyBatis"
+                    title="MyBatis"
+                    rel="2">MyBatis</a>
+        
+                <a data-sort="0107" 
+                    href="/archive/?tag=NIO"
+                    title="NIO"
+                    rel="2">NIO</a>
+        
+                <a data-sort="0107" 
+                    href="/archive/?tag=Netty"
+                    title="Netty"
+                    rel="2">Netty</a>
+        
+                <a data-sort="0107" 
+                    href="/archive/?tag=SpringCloud"
+                    title="SpringCloud"
+                    rel="2">SpringCloud</a>
+        
+                <a data-sort="0107" 
+                    href="/archive/?tag=SpringCloud-GateWay"
+                    title="SpringCloud-GateWay"
+                    rel="2">SpringCloud-GateWay</a>
+        
+                <a data-sort="0107" 
+                    href="/archive/?tag=k8s"
+                    title="k8s"
+                    rel="2">k8s
+    </div>
+</section>
+
+
+                <!-- Friends Blog -->
+<!--                -->
+            </div>
+        </div>
+    </div>
+</article>
+
+<!-- add support for mathjax by voleking-->
+
+
+
+<!-- Page-view counter: Busuanzi does not accept localhost or 127.0.0.1. -->
+<script src="https://cdn.busuanzi.cc/busuanzi/3.6.9/busuanzi.min.js" defer></script>
+
+
+
+
+
+<!-- async load function -->
+<script>
+    function async(u, c) {
+      var d = document, t = 'script',
+          o = d.createElement(t),
+          s = d.getElementsByTagName(t)[0];
+      o.src = u;
+      if (c) { o.addEventListener('load', function (e) { c(null, e); }, false); }
+      s.parentNode.insertBefore(o, s);
+    }
+</script>
+<!-- anchor-js, Doc:http://bryanbraun.github.io/anchorjs/ -->
+<script>
+    async("//cdnjs.cloudflare.com/ajax/libs/anchor-js/1.1.1/anchor.min.js",function(){
+        anchors.options = {
+          visible: 'always',
+          placement: 'right',
+          icon: '#'
+        };
+        anchors.add().remove('.intro-header h1').remove('.subheading').remove('.sidebar-container h5');
+    })
+</script>
+<style>
+    /* place left on bigger screen */
+    @media all and (min-width: 800px) {
+        .anchorjs-link{
+            position: absolute;
+            left: -0.75em;
+            font-size: 1.1em;
+            margin-top : -0.1em;
+        }
+    }
+</style>
+
+
+
+    <!-- Footer -->
+<footer>
+    <div class="container">
+        <div class="row">
+            <div class="col-lg-8 col-lg-offset-2 col-md-10 col-md-offset-1">
+                <!-- &lt;!&ndash; SNS Link &ndash;&gt;
+                
+
+
+<ul class="list-inline text-center">
+
+
+  
+
+</ul> -->
+
+                <p class="copyright text-muted">
+                    <!-- Copyright &copy; jamie Blog 2026
+                    <br> -->
+                    Copyright &copy; 2016–2026 jamie Blog<br>
+                    Powered by <a href="/about/">jamie</a>
+               </p>
+           </div>
+       </div>
+   </div>
+</footer>
+
+<!-- jQuery -->
+<script src="/js/jquery.min.js "></script>
+
+<!-- Bootstrap Core JavaScript -->
+<!-- Currently, only navbar scroll-down effect at desktop still depends on this -->
+<script src="/js/bootstrap.min.js "></script>
+
+<!-- Custom Theme JavaScript -->
+<script src="/js/hux-blog.min.js "></script>
+<script src="/js/blog-search.js"></script>
+
+
+<!-- Article image preview -->
+<script src="/js/post-image-preview.js"></script>
+
+
+<!-- Service Worker -->
+
+<script src="/js/snackbar.js "></script>
+<script src="/js/sw-registration.js "></script>
+
+
+
+
+<!-- async load function -->
+<script>
+    function async(u, c) {
+      var d = document, t = 'script',
+          o = d.createElement(t),
+          s = d.getElementsByTagName(t)[0];
+      o.src = u;
+      if (c) { o.addEventListener('load', function (e) { c(null, e); }, false); }
+      s.parentNode.insertBefore(o, s);
+    }
+</script>
+
+<!--
+     Because of the native support for backtick-style fenced code blocks
+     right within the Markdown is landed in Github Pages,
+     From V1.6, There is no need for Highlight.js,
+     so Huxblog drops it officially.
+
+     - https://github.com/blog/2100-github-pages-now-faster-and-simpler-with-jekyll-3-0
+     - https://help.github.com/articles/creating-and-highlighting-code-blocks/
+     - https://github.com/jneen/rouge/wiki/list-of-supported-languages-and-lexers
+-->
+<!--
+    <script>
+        async("http://cdn.bootcss.com/highlight.js/8.6/highlight.min.js", function(){
+            hljs.initHighlightingOnLoad();
+        })
+    </script>
+    <link href="http://cdn.bootcss.com/highlight.js/8.6/styles/github.min.css" rel="stylesheet">
+-->
+
+
+
+
+
+<!--fastClick.js -->
+<!-- <script>
+    async("//cdnjs.cloudflare.com/ajax/libs/fastclick/1.0.6/fastclick.min.js", function(){
+        var $nav = document.querySelector("nav");
+        if($nav) FastClick.attach($nav);
+    })
+</script> -->
+
+
+<!-- Google Analytics -->
+
+<script>
+    // dynamic User by Hux
+    var _gaId = 'UA-49627206-1';
+    var _gaDomain = 'jamie.me';
+
+    // Originial
+    (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+    (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+    m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+    });
+    // (window,document,'script','//www.google-analytics.com/analytics.js','ga');
+
+    ga('create', _gaId, _gaDomain);
+    ga('send', 'pageview');
+</script>
+
+
+
+<!-- Baidu Tongji -->
+
+
+
+<!-- Side Catalog -->
+
+<script type="text/javascript">
+    function generateCatalog (selector) {
+
+        // interop with multilangual 
+        if ('' == 'true') {
+            _containerSelector = 'div.post-container.active'
+        } else {
+            _containerSelector = 'div.post-container'
+        }
+
+        // init
+        var P = $(_containerSelector),a,n,t,l,i,c;
+        a = P.find('h1,h2,h3,h4,h5,h6');
+
+        // clean
+        $(selector).html('')
+
+        // appending
+        a.each(function () {
+            n = $(this).prop('tagName').toLowerCase();
+            i = "#"+$(this).prop('id');
+            t = $(this).text();
+            c = $('<a href="'+i+'" rel="nofollow">'+t+'</a>');
+            l = $('<li class="'+n+'_nav"></li>').append(c);
+            $(selector).append(l);
+        });
+        return true;
+    }
+
+    generateCatalog(".catalog-body");
+
+    // toggle side catalog
+    $(".catalog-toggle").click((function(e){
+        e.preventDefault();
+        $('.side-catalog').toggleClass("fold")
+    }))
+
+    /*
+     * Doc: https://github.com/davist11/jQuery-One-Page-Nav
+     * Fork by Hux to support padding
+     */
+    async("/js/jquery.nav.js", function () {
+        $('.catalog-body').onePageNav({
+            currentClass: "active",
+            changeHash: !1,
+            easing: "swing",
+            filter: "",
+            scrollSpeed: 700,
+            scrollOffset: 0,
+            scrollThreshold: .2,
+            begin: null,
+            end: null,
+            scrollChange: null,
+            padding: 80
+        });
+    });
+</script>
+
+
+
+<!-- Multi-Lingual -->
+
+
+
+
+<!-- Image to hack wechat -->
+<!--<img src="/img/icon_wechat.png" width="0" height="0" />-->
+<!-- Migrate from head to bottom, no longer block render and still work -->
+
+</body>
+
+</html>

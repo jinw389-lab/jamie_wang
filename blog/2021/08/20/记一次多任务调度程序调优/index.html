@@ -1,0 +1,1054 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="baidu-site-verification" content="code-8XHgqNvUKa" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+    <meta name="description" content="关于后端程序设计 | 这里是 jamie 的个人博客。">
+    <meta name="keywords"  content="jamie, java, spring, jamie的博客, 博客, 个人网站, 互联网, 后端, jamie's blog">
+    <meta name="theme-color" content="#000000">
+
+    <!-- Apply the saved theme before rendering to avoid a color flash. -->
+    <script>
+        (function () {
+            var theme = null;
+            try {
+                theme = localStorage.getItem('jamie-blog-theme');
+            } catch (error) {}
+
+            if (['classic', 'eye', 'dark'].indexOf(theme) === -1) {
+                theme = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches
+                    ? 'dark'
+                    : 'classic';
+            }
+
+            document.documentElement.setAttribute('data-theme', theme);
+        })();
+    </script>
+    
+    <!-- Open Graph -->
+    <meta property="og:title" content="记一次多任务调度程序调优 - jamie的博客 | jamie Blog">
+    
+    <meta property="og:type" content="article">
+    <meta property="og:description" content="1. 背景
+1.1 原始方案与存在的问题
+
+  循环遍历企业，按照企业抓拍。排在前的企业抓拍会阻塞排在后面的企业，严重影响用户体验。
+  采用定时任务执行，周期过短，单个周期内不能执行完数据抓拍；周期过长，抓拍延迟严重。
+  单线程执行，抓拍严重串行化，效率低，不能充分利用服务器资源。
+    2. 新方案结构图
+    2.1 结构图
+    
+  
+
+
+">
+    
+    <meta property="article:published_time" content="2021-08-20T00:00:00Z">
+    
+    
+    
+    <meta property="article:tag" content="Redis">
+    
+    <meta property="article:tag" content="多线程">
+    
+    
+    <meta property="og:image" content="https://jinw389-lab.github.io/images/wexin.png">
+    <meta property="og:url" content="https://jinw389-lab.github.io/blog/2021/08/20/%E8%AE%B0%E4%B8%80%E6%AC%A1%E5%A4%9A%E4%BB%BB%E5%8A%A1%E8%B0%83%E5%BA%A6%E7%A8%8B%E5%BA%8F%E8%B0%83%E4%BC%98/">
+    <meta property="og:site_name" content="jamie的博客 | jamie Blog">
+    
+    <title>记一次多任务调度程序调优 - jamie的博客 | jamie Blog</title>
+
+    <!-- Web App Manifest -->
+    <link rel="manifest" href="/pwa/manifest.json">
+
+    <!-- Favicon -->
+    <link rel="shortcut icon" href="/img/logo.jpg">
+    
+    <!-- Canonical URL -->
+    <link rel="canonical" href="https://jinw389-lab.github.io/blog/2021/08/20/%E8%AE%B0%E4%B8%80%E6%AC%A1%E5%A4%9A%E4%BB%BB%E5%8A%A1%E8%B0%83%E5%BA%A6%E7%A8%8B%E5%BA%8F%E8%B0%83%E4%BC%98/">
+
+    <!-- Bootstrap Core CSS -->
+    <link rel="stylesheet" href="/css/bootstrap.min.css">
+
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="/css/hux-blog.min.css">
+    <link rel="stylesheet" href="/css/interaction.css">
+    <link rel="stylesheet" href="/css/themes.css">
+    <link rel="stylesheet" href="/css/search.css">
+    <script src="/js/theme-switcher.js" defer></script>
+
+    <!-- Custom Fonts -->
+    <!-- <link href="http://maxcdn.bootstrapcdn.com/font-awesome/4.3.0/css/font-awesome.min.css" rel="stylesheet" type="text/css"> -->
+    <!-- Hux change font-awesome CDN to qiniu -->
+    <!-- <link href="//cdnjs.cloudflare.com/ajax/libs/font-awesome/4.6.3/css/font-awesome.min.css" rel="stylesheet" type="text/css"> -->
+
+
+    <!-- HTML5 Shim and Respond.js IE8 support of HTML5 elements and media queries -->
+    <!-- WARNING: Respond.js doesn't work if you view the page via file:// -->
+    <!--[if lt IE 9]>
+        <script src="https://oss.maxcdn.com/libs/html5shiv/3.7.0/html5shiv.js"></script>
+        <script src="https://oss.maxcdn.com/libs/respond.js/1.4.2/respond.min.js"></script>
+    <![endif]-->
+
+    <!-- ga & ba script hoook -->
+    <script></script>
+</head>
+
+
+<!-- hack iOS CSS :active style -->
+<body ontouchstart="">
+
+    <!-- Navigation -->
+
+<nav class="navbar navbar-default navbar-custom navbar-fixed-top">
+
+    <div class="container-fluid">
+        <!-- Brand and toggle get grouped for better mobile display -->
+        <div class="navbar-header page-scroll">
+            <button type="button" class="navbar-toggle">
+                <span class="sr-only">Toggle navigation</span>
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+            </button>
+            <a class="navbar-brand" href="/">jamie Blog</a>
+        </div>
+
+        <!-- Collect the nav links, forms, and other content for toggling -->
+        <div id="huxblog_navbar">
+            <div class="navbar-collapse">
+                <ul class="nav navbar-nav navbar-right">
+                    <li>
+                        <a href="/">首页</a>
+                    </li>
+                    
+                    
+                    
+                    
+                    <li>
+                        
+                            <a href="/about/">关于</a>
+                        
+                    </li>
+                    
+                    
+                    
+                    <li>
+                        
+                        <a href="/archive/">归档</a>
+                        
+                    </li>
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                </ul>
+            </div>
+        </div>
+        <!-- /.navbar-collapse -->
+    </div>
+    <!-- /.container -->
+</nav>
+<div class="floating-tools edge-right is-collapsed" data-floating-tools>
+    <button class="floating-tools-handle" type="button" data-floating-tools-toggle aria-expanded="false" aria-label="展开快捷工具，可拖动调整位置" title="点击展开，拖动调整位置">
+    </button>
+    <div class="floating-tools-panel">
+        <a class="floating-tool floating-home-button" href="/" aria-label="首页" title="首页">
+            <svg class="floating-nav-icon" viewBox="0 0 20 20" aria-hidden="true">
+                <path d="m3 9.5 7-6 7 6"></path>
+                <path d="M5.5 8.5V17h9V8.5M8.5 17v-4.5h3V17"></path>
+            </svg>
+            <span class="floating-tool-label">首页</span>
+        </a>
+        <a class="floating-tool floating-about-button" href="/about/" aria-label="关于" title="关于">
+            <svg class="floating-nav-icon" viewBox="0 0 20 20" aria-hidden="true">
+                <circle cx="10" cy="6.5" r="3"></circle>
+                <path d="M4.5 17c.45-3.15 2.3-4.75 5.5-4.75s5.05 1.6 5.5 4.75"></path>
+            </svg>
+            <span class="floating-tool-label">关于</span>
+        </a>
+        <a class="floating-tool floating-archive-button" href="/archive/" aria-label="归档" title="归档">
+            <svg class="floating-nav-icon" viewBox="0 0 20 20" aria-hidden="true">
+                <path d="M3 5.5h14V17H3zM2.5 3h15v3h-15zM8 9.5h4"></path>
+            </svg>
+            <span class="floating-tool-label">归档</span>
+        </a>
+        <button class="floating-tool floating-search-button" type="button" data-search-open aria-label="打开文章搜索" title="搜索">
+            <svg class="floating-search-icon" viewBox="0 0 24 24" aria-hidden="true">
+                <circle cx="11" cy="11" r="6.5"></circle>
+                <path d="m16 16 4 4"></path>
+            </svg>
+            <span class="floating-tool-label">搜索</span>
+        </button>
+        <button class="floating-tool theme-switcher" type="button" data-theme-toggle aria-live="polite">
+            <span class="theme-switcher-icon" data-theme-icon aria-hidden="true">◐</span>
+            <span class="floating-tool-label" data-theme-label>经典</span>
+        </button>
+    </div>
+</div>
+<script>
+    // Drop Bootstarp low-performance Navbar
+    // Use customize navbar with high-quality material design animation
+    // in high-perf jank-free CSS3 implementation
+    var $body   = document.body;
+    var $toggle = document.querySelector('.navbar-toggle');
+    var $navbar = document.querySelector('#huxblog_navbar');
+    var $collapse = document.querySelector('.navbar-collapse');
+
+    var __HuxNav__ = {
+        close: function(){
+            $navbar.className = " ";
+            // wait until animation end.
+            setTimeout(function(){
+                // prevent frequently toggle
+                if($navbar.className.indexOf('in') < 0) {
+                    $collapse.style.height = "0px"
+                }
+            },400)
+        },
+        open: function(){
+            $collapse.style.height = "auto"
+            $navbar.className += " in";
+        }
+    }
+
+    // Bind Event
+    $toggle.addEventListener('click', function(e){
+        if ($navbar.className.indexOf('in') > 0) {
+            __HuxNav__.close()
+        }else{
+            __HuxNav__.open()
+        }
+    })
+
+    /**
+     * Since Fastclick is used to delegate 'touchstart' globally
+     * to hack 300ms delay in iOS by performing a fake 'click',
+     * Using 'e.stopPropagation' to stop 'touchstart' event from 
+     * $toggle/$collapse will break global delegation.
+     * 
+     * Instead, we use a 'e.target' filter to prevent handler
+     * added to document close HuxNav.  
+     *
+     * Also, we use 'click' instead of 'touchstart' as compromise
+     */
+    document.addEventListener('click', function(e){
+        if(e.target == $toggle) return;
+        if(e.target.className == 'icon-bar') return;
+        __HuxNav__.close();
+    })
+</script>
+
+    <div class="blog-search" data-blog-search data-index-url="/search.json" hidden>
+    <div class="blog-search-backdrop" data-search-close></div>
+    <section class="blog-search-dialog" role="dialog" aria-modal="true" aria-labelledby="blog-search-title">
+        <h2 class="sr-only" id="blog-search-title">搜索文章</h2>
+        <div class="blog-search-input-row">
+            <svg class="blog-search-icon" viewBox="0 0 24 24" aria-hidden="true">
+                <circle cx="11" cy="11" r="6.5"></circle>
+                <path d="m16 16 4 4"></path>
+            </svg>
+            <input
+                class="blog-search-input"
+                type="search"
+                inputmode="search"
+                autocomplete="off"
+                spellcheck="false"
+                placeholder="搜索标题、标签或文章内容"
+                aria-label="搜索文章"
+                aria-controls="blog-search-results"
+            >
+            <button class="blog-search-close" type="button" data-search-close aria-label="关闭搜索">×</button>
+        </div>
+        <div class="blog-search-status" data-search-status aria-live="polite">输入关键词开始搜索</div>
+        <div class="blog-search-results" id="blog-search-results" data-search-results role="listbox"></div>
+        <div class="blog-search-help" aria-hidden="true">
+            <span><kbd>↑</kbd><kbd>↓</kbd> 选择</span>
+            <span><kbd>Enter</kbd> 打开</span>
+            <span><kbd>Esc</kbd> 关闭</span>
+        </div>
+    </section>
+</div>
+
+
+    <!-- Image to hack wechat -->
+<!-- <img src="/img/icon_wechat.png" width="0" height="0"> -->
+<!-- <img src="/img/home-bg.jpg" width="0" height="0"> -->
+
+<!-- Post Header -->
+
+
+
+<style type="text/css">
+    header.intro-header{
+        position: relative;
+        background-image: url('/img/home-bg.jpg');
+        background: ;
+    }
+
+    
+</style>
+
+<header class="intro-header" >
+
+    <div class="header-mask"></div>
+    
+    <div class="container">
+        <div class="row">
+            <div class="col-lg-8 col-lg-offset-2 col-md-10 col-md-offset-1">
+                <div class="post-heading">
+                    <div class="tags">
+                        
+                        <a class="tag" href="/archive/?tag=Redis" title="Redis">Redis</a>
+                        
+                        <a class="tag" href="/archive/?tag=%E5%A4%9A%E7%BA%BF%E7%A8%8B" title="多线程">多线程</a>
+                        
+                    </div>
+                    <h1>记一次多任务调度程序调优</h1>
+                    
+                    <h2 class="subheading"></h2>
+                    <span class="meta post-meta-line">
+                        Posted by jamie Blog on 2021-08-20
+                        <span class="post-meta-separator" aria-hidden="true">·</span>
+                        <span class="post-view-count" aria-label="文章阅读量">阅读 <span id="busuanzi_page_pv">--</span> 次</span>
+                    </span>
+                </div>
+            </div>
+        </div>
+    </div>
+</header>
+
+
+
+
+
+
+
+<!-- Post Content -->
+<article>
+    <div class="container">
+        <div class="row">
+
+    <!-- Post Container -->
+            <div class="
+                col-lg-8 col-lg-offset-2
+                col-md-10 col-md-offset-1
+                post-container">
+
+                <!-- Multi-Lingual -->
+                
+
+				<h3 id="1-背景">1. 背景</h3>
+<h4 id="11-原始方案与存在的问题">1.1 原始方案与存在的问题</h4>
+<ol>
+  <li>循环遍历企业，按照企业抓拍。排在前的企业抓拍会阻塞排在后面的企业，严重影响用户体验。</li>
+  <li>采用定时任务执行，周期过短，单个周期内不能执行完数据抓拍；周期过长，抓拍延迟严重。</li>
+  <li>单线程执行，抓拍严重串行化，效率低，不能充分利用服务器资源。
+    <h3 id="2-新方案结构图">2. 新方案结构图</h3>
+    <h4 id="21-结构图">2.1 结构图</h4>
+    <p><img src="https://note.youdao.com/yws/api/personal/file/503954EC86BF45C5A0478B068B31F3D2?method=download&amp;shareKey=49137bfc11acdc55950aeec594a129c0" alt="image" /></p>
+  </li>
+</ol>
+
+<h4 id="22-数据流向动态图">2.2 数据流向动态图</h4>
+
+<p><img src="https://note.youdao.com/yws/api/personal/file/C4670A3FDAB54BF78740102698A7427C?method=download&amp;shareKey=e85b7e4601ee12f8f530e78f93d2258d" alt="image" /></p>
+<h3 id="3-碰到的问题与解决方案">3. 碰到的问题与解决方案</h3>
+<h4 id="31-线程池拒绝策略">3.1 线程池拒绝策略</h4>
+<h5 id="311-描述与分析">3.1.1 描述与分析</h5>
+<p>在线程池没有空闲线程的情况下，有新的任务需要执行，默认线程池拒绝策略为抛出异常。由于没有多余的线程可以使用，程序没有做任何补救措施。</p>
+
+<p>当后续线程池有空闲线程的时候，sn轮询线程已经轮询到的sn也是不定的，所以应该执行某个小票队列中的数据也变得随机，最坏的情况就是，某一个小票队列一直没有被执行到。</p>
+
+<h5 id="312-解决方案">3.1.2 解决方案</h5>
+<p>修改线程池拒绝策略为：CallerRunsPolicy，由调用者线程执行。   <br />
+如此一来，sn轮询线程就会变成抓拍线程，并执行抓拍任务。</p>
+
+<p>这样就保证了，小票队列的执行顺序与sn对列轮询顺序一致。</p>
+
+<p><img src="https://note.youdao.com/yws/api/personal/file/8AC19003D1ED4F8C92798EF5FA245457?method=download&amp;shareKey=92c720ee06b8733123f2e93bfe81a183" alt="image" /></p>
+
+<h5 id="313-方案缺陷">3.1.3 方案缺陷</h5>
+<p>若在sn轮询线程执行抓拍过程中，有了空闲线程，该空闲线程就被闲置，只能等到sn轮询线程将本次抓拍执行完成后继续轮询sn队列，并将下一个 sn 任务交由该闲置线程处理，该线程才能被利用。</p>
+
+<p>由于目前很多时候，都是小票抓拍时间未到，这将导致抓拍线程执行任务特别快，闲置线程不会闲置太久。就算要执行抓拍，抓拍时间也在4到5秒能执行完成，该闲置线程也只能闲置4到5秒的时间，还算能接受。</p>
+
+<h4 id="32-sn-队列-score-设置不合理导致sn线程不能轮询">3.2 sn 队列 score 设置不合理，导致sn线程不能轮询</h4>
+<h5 id="321-描述与分析">3.2.1 描述与分析</h5>
+<p>改问题现象：sn 线程不能继续轮询下去，一直卡在某一个特定的 sn。</p>
+
+<p>轮询实现方案：
+基于score分数来进行轮询，当轮询到某个sn时，从队列中取出两条数据，cur 和 next ，并记录下一次查询时的起始分数 = next 的 score。  <br />
+下一次取数的时候，就能跳过上一步骤的 cur ，从而达到轮询下一个数据的目的。</p>
+
+<p>效果如下：
+<img src="https://note.youdao.com/yws/api/personal/file/65CC0F0158F64AE2BDB4F9EA70FCD0E3?method=download&amp;shareKey=5e5638d5a5f34f64b3354ea482369bb9" alt="image" /></p>
+
+<p>倘若 有多条数据，score 分数相同。</p>
+
+<p><img src="https://note.youdao.com/yws/api/personal/file/B094D65D6C9941EAA99AD0B7ECF426C2?method=download&amp;shareKey=c2936f673e5736bca5b3638e6f1a32e4" alt="image" />。</p>
+
+<h5 id="322-解决方案">3.2.2 解决方案</h5>
+<p>sn 数据入队列的时候，score设置为当前时间+三位随机小数（降低重复率）</p>
+
+<h4 id="33-sn-队列-score-设置不合理队列数据排序被重置">3.3 sn 队列 score 设置不合理，队列数据排序被重置</h4>
+<h5 id="331-描述与分析">3.3.1 描述与分析</h5>
+
+<p>程序中，某一小票队列中的优先级最高的数据执行抓拍。并且该条数据执行抓拍任务时，由于某些原因，导致重试。则需要重新加入该小票队列。此时也会重新添加sn队列。该sn的score为当前时间，排到了队列尾部。在极端情况下，多个小票数据存在此种情况，sn队列中的数据大多都被重置。这将影响到 sn 轮询线程的轮询逻辑（由于轮询依赖 score ）。</p>
+
+<p><img src="https://note.youdao.com/yws/api/personal/file/FFA8924CCB844BF290E478680D67C9AA?method=download&amp;shareKey=d63fea26e955b5fc95c58c9e84432c60" alt="image" /></p>
+
+<p>下一次轮询的时候，由于nextScore=1626658800178,基于此条件，则查询出来的数据为如下两条，正常情况下，cur应该指向最后一条数据，然而当前现象是next指向了这一条。导致被重置的数据没有执行。极端情况下，该现象会成倍扩大，执行顺序会被打乱。</p>
+
+<h5 id="333-解决方案">3.3.3 解决方案</h5>
+<p>sn 入队列的时候，同步判断该数据是否存在，不存在则添加，存在则不做处理。</p>
+
+<h4 id="34-线程池线程无法复用">3.4 线程池线程无法复用</h4>
+<h5 id="341-描述与分析">3.4.1 描述与分析</h5>
+<p>小票任务执行线程中第一步是获取分布式锁，若此时抛出异常，并且未捕获的情况下，线程池会把这个线程移除掉，并创建一个新的线程放到线程池中。</p>
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code><table class="rouge-table"><tbody><tr><td class="rouge-gutter gl"><pre class="lineno">1
+2
+</pre></td><td class="rouge-code"><pre>    Lock lock = lockFactory.getLock(LockType.FAIR, TIME_OUT, TIME_OUT, "PurchaseRecord_DownLoadImage", sn);
+    boolean acquire = lock.acquire();
+</pre></td></tr></tbody></table></code></pre></div></div>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code><table class="rouge-table"><tbody><tr><td class="rouge-gutter gl"><pre class="lineno">1
+2
+3
+4
+5
+6
+7
+8
+9
+</pre></td><td class="rouge-code"><pre>    @Override
+    public boolean acquire() {
+        try {
+            rLock = redissonClient.getFairLock(lockInfo.getName());
+            return rLock.tryLock(lockInfo.getWaitTimeSecs(), lockInfo.getLeaseTimeSecs(), TimeUnit.SECONDS);
+        } catch (InterruptedException e) {
+            return false;
+        }
+    }
+</pre></td></tr></tbody></table></code></pre></div></div>
+
+<p>上述代码中若抛出非InterruptedException的异常，将会影响到当前线程。</p>
+
+<h5 id="343-解决方案">3.4.3 解决方案</h5>
+<p>try catch 捕获并处理异常。</p>
+
+<h4 id="35-httpclinet使用不当导致资源不能及时释放">3.5 httpClinet使用不当，导致资源不能及时释放</h4>
+<h5 id="351-描述与分析">3.5.1 描述与分析</h5>
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code><table class="rouge-table"><tbody><tr><td class="rouge-gutter gl"><pre class="lineno">1
+</pre></td><td class="rouge-code"><pre>CloseableHttpClient httpClient = HttpClients.createDefault();
+</pre></td></tr></tbody></table></code></pre></div></div>
+<p>未使用线程池管理，每次执行抓拍时，手动创建默认的httpClinet，没有手动关闭流，资源不能及时释放。高并发下，将导致内存大量被占用，最后程序不能申请足够的内存，从而导致宕机。</p>
+
+<h5 id="352-解决方案">3.5.2 解决方案</h5>
+<ol>
+  <li>程序启动初始化httpclient，后续直接使用。</li>
+  <li>手动及时关闭流。</li>
+</ol>
+
+<h4 id="36-未设置休眠时间">3.6 未设置休眠时间</h4>
+<h5 id="361-描述与分析">3.6.1 描述与分析</h5>
+
+<p>dump分析信息截图</p>
+
+<p><img src="https://note.youdao.com/yws/api/personal/file/6C2F6B4D610B49DD95788633BC50E696?method=download&amp;shareKey=ce444d523bb6f36cf1c5de1db26f3a4d" alt="image" /></p>
+<center>图1</center>
+<p><br /><br /></p>
+
+<p><img src="https://note.youdao.com/yws/api/personal/file/34D5E047CE0945A1B630AB865620D587?method=download&amp;shareKey=757f6c16729ccbc898c7832c9a4e109c" alt="image" /></p>
+<center>图2</center>
+<p><br /><br /></p>
+
+<p><img src="https://note.youdao.com/yws/api/personal/file/DC21A3184C514BE2A5549BFC23B9F1B9?method=download&amp;shareKey=b87e6ed5f71a322a4d10fc28e9be8623" alt="image" /></p>
+<center>图3</center>
+<p><br /><br /></p>
+
+<p><img src="https://note.youdao.com/yws/api/personal/file/504B8C9A4A7A4F06B70AD690605010F6?method=download&amp;shareKey=91580ff9cb4301d162ac67a52135c74c" alt="image" /></p>
+<center>图4</center>
+<p><br /><br /></p>
+
+<p>此时查看 redis 中的 sn 队列，==只有一条数据==。</p>
+
+<p>由于同一个设备sn抓拍只能串行，那么在抓拍线程执行任务时，第一步就是获取分布式锁，但是当前只有一个sn，那么就是线程池中的所有线程都会去竞争该锁，得到锁的线程，执行抓拍任务，剩下的线程未获取锁后，==轮询获取==，形成空轮询，短时间内，创建大量的 redis 连接。</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code><table class="rouge-table"><tbody><tr><td class="rouge-gutter gl"><pre class="lineno">1
+2
+3
+4
+5
+</pre></td><td class="rouge-code"><pre>    boolean locked = posSnCacheRepository.isLocked(sn, enterpriseCode, TIME_OUT);
+    if (locked) {
+        //没有获取到锁，直接retrn
+        return;
+    }
+</pre></td></tr></tbody></table></code></pre></div></div>
+
+<h5 id="372-解决方案">3.7.2 解决方案</h5>
+
+<ol>
+  <li>若 sn 队列没有数据时，sn 轮询线程依然会进行 redis 访问，给 redis 带来非必要的压力，浪费资源。</li>
+  <li>小票抓拍线程，在未获取到分布式锁的情况下（有其他线程在执行该设备下的小票抓拍），
+会释放线程，短时间内可能存在大量的线程执行任务。为了尽可能降低并发访问量，需设置休眠时间。</li>
+</ol>
+
+<p>在相应位置，设置休眠时间，有效降低 redis 的请求量。</p>
+
+<h4 id="35-redis-延迟测量导致内存溢出">3.5 redis 延迟测量导致内存溢出</h4>
+<h5 id="351-描述与分析-1">3.5.1 描述与分析</h5>
+<p>dump 分析发现，存在大量调用 LatencyUtils 记录。</p>
+
+<p><a href="https://www.cnblogs.com/wei-zw/p/9159234.html">Lettuce命令延迟测量(CommandLatency)</a></p>
+
+<p><a href="https://www.cnblogs.com/shangyingbin/p/14541708.html">一次lettuce导致的内存溢出问题</a></p>
+
+<h5 id="352-解决方案-1">3.5.2 解决方案</h5>
+
+<p>初始化 LettuceConnectionFactory 时关闭延迟测量。</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code><table class="rouge-table"><tbody><tr><td class="rouge-gutter gl"><pre class="lineno">1
+2
+3
+4
+5
+6
+7
+8
+9
+10
+11
+12
+13
+14
+15
+16
+17
+18
+19
+20
+21
+22
+23
+24
+25
+26
+27
+28
+29
+30
+31
+32
+33
+34
+35
+36
+37
+</pre></td><td class="rouge-code"><pre>    /**
+     * 基于Netty框架的事件驱动的通信层，其方法调用是异步的。
+     * Lettuce的API是线程安全的，所以可以操作单个Lettuce连接来完成各种操作
+     *
+     * @param redisProperties
+     * @return
+     */
+    public static LettuceConnectionFactory buildLettuceConnectionFactory(RedisProperties redisProperties) {
+        LettuceClientConfiguration lettuceClientConfiguration;
+        if (null != redisProperties.getLettuce().getPool()) {
+            LettucePoolingClientConfiguration.LettucePoolingClientConfigurationBuilder lettucePoolingClientConfigurationBuilder = LettucePoolingClientConfiguration.builder();
+            lettucePoolingClientConfigurationBuilder.commandTimeout(redisProperties.getTimeout() == null ? DEFAULT_REDIS_CONNECT_TIMEOUT : redisProperties.getTimeout());
+            lettucePoolingClientConfigurationBuilder.shutdownTimeout(redisProperties.getLettuce().getShutdownTimeout() == null ? DEFAULT_REDIS_SHUTDOWN_TIMEOUT : redisProperties.getLettuce().getShutdownTimeout());
+
+            GenericObjectPoolConfig poolConfig = buildGenericObjectPoolConfig(redisProperties);
+            lettucePoolingClientConfigurationBuilder.poolConfig(poolConfig);
+            //关闭延迟测量
+            lettucePoolingClientConfigurationBuilder.clientResources(DefaultClientResources.builder().commandLatencyCollectorOptions(DefaultCommandLatencyCollectorOptions.disabled()).build());
+
+            lettuceClientConfiguration = lettucePoolingClientConfigurationBuilder.build();
+        } else {
+            LettuceClientConfiguration.LettuceClientConfigurationBuilder lettuceClientConfigurationBuilder = LettuceClientConfiguration.builder();
+            lettuceClientConfigurationBuilder.commandTimeout(redisProperties.getTimeout() == null ? DEFAULT_REDIS_CONNECT_TIMEOUT : redisProperties.getTimeout());
+            lettuceClientConfigurationBuilder.shutdownTimeout(redisProperties.getLettuce().getShutdownTimeout() == null ? DEFAULT_REDIS_SHUTDOWN_TIMEOUT : redisProperties.getLettuce().getShutdownTimeout());
+
+            //关闭延迟测量
+            lettuceClientConfigurationBuilder.clientResources(DefaultClientResources.builder().commandLatencyCollectorOptions(DefaultCommandLatencyCollectorOptions.disabled()).build());
+
+            lettuceClientConfiguration = lettuceClientConfigurationBuilder.build();
+        }
+
+        RedisStandaloneConfiguration redisStandaloneConfiguration = buildRedisStandaloneConfiguration(redisProperties);
+        LettuceConnectionFactory factory = buildLettuceConnectionFactory(redisProperties, lettuceClientConfiguration, redisStandaloneConfiguration);
+        factory.afterPropertiesSet();
+
+        return factory;
+    }
+</pre></td></tr></tbody></table></code></pre></div></div>
+
+
+                <hr style="visibility: hidden;">
+                <ul class="pager">
+
+
+                    
+                    <li class="next">
+                        <a href="/blog/2021/08/10/%E4%BC%81%E4%B8%9A%E5%BC%80%E5%8F%91%E4%B8%BA%E4%BD%95%E4%B8%8D%E7%94%A8%E8%87%AA%E5%A2%9E%E4%B8%BB%E9%94%AE/" data-toggle="tooltip" data-placement="top" title="企业开发为何不用自增主键">
+                        下一篇<br>
+                        <span>企业开发为何不用自增主键</span>
+                        </a>
+                    </li>
+                    
+
+                    
+                    <li class="previous">
+                        <a href="/blog/2021/09/06/%E5%90%8C%E4%BA%8B%E8%AF%B4MVCC%E8%A7%A3%E5%86%B3%E4%BA%86%E5%B9%BB%E8%AF%BB-%E6%88%91%E6%89%93%E7%AE%97%E5%8F%8D%E9%A9%B3%E4%BB%96/" data-toggle="tooltip" data-placement="top" title="同事说MVCC解决了幻读，我打算反驳他">
+                            上一篇<br>
+                            <span>同事说MVCC解决了幻读，我打算反驳他</span>
+                        </a>
+                    </li>
+                    
+
+                </ul>
+                <hr style="visibility: hidden;">
+
+            </div>  
+
+    <!-- Side Catalog Container -->
+        
+            <div class="
+                col-lg-2 col-lg-offset-0
+                visible-lg-block
+                sidebar-container
+                catalog-container">
+                <div class="side-catalog">
+                    <hr class="hidden-sm hidden-xs">
+                    <h5>
+                        <a class="catalog-toggle" href="#">目录</a>
+                    </h5>
+                    <ul class="catalog-body"></ul>
+                </div>
+            </div>
+        
+
+    <!-- Sidebar Container -->
+            <div class="
+                col-lg-8 col-lg-offset-2
+                col-md-10 col-md-offset-1
+                sidebar-container">
+
+                <!-- Featured Tags -->
+                
+
+
+<section>
+    
+        <hr class="hidden-sm hidden-xs">
+    
+    <h5><a href="/archive/">归档</a></h5>
+    <div class="tags">
+        
+        
+        
+        </a>
+        
+        
+                <a data-sort="0099" 
+                    href="/archive/?tag=java"
+                    title="java"
+                    rel="10">java</a>
+        
+                <a data-sort="0060" 
+                    href="/archive/?tag=%E6%97%A5%E5%B8%B8%E8%AE%B0%E5%BD%95"
+                    title="日常记录"
+                    rel="49">日常记录</a>
+        
+                <a data-sort="0097" 
+                    href="/archive/?tag=MySQL"
+                    title="MySQL"
+                    rel="12">MySQL</a>
+        
+                <a data-sort="0101" 
+                    href="/archive/?tag=%E5%A4%9A%E7%BA%BF%E7%A8%8B"
+                    title="多线程"
+                    rel="8">多线程</a>
+        
+                <a data-sort="0102" 
+                    href="/archive/?tag=Spring"
+                    title="Spring"
+                    rel="7">Spring</a>
+        
+                <a data-sort="0105" 
+                    href="/archive/?tag=%E8%AE%BE%E8%AE%A1%E6%A8%A1%E5%BC%8F"
+                    title="设计模式"
+                    rel="4">设计模式</a>
+        
+                <a data-sort="0105" 
+                    href="/archive/?tag=Redis"
+                    title="Redis"
+                    rel="4">Redis</a>
+        
+                <a data-sort="0105" 
+                    href="/archive/?tag=SpringBoot"
+                    title="SpringBoot"
+                    rel="4">SpringBoot</a>
+        
+                <a data-sort="0105" 
+                    href="/archive/?tag=Zookeeper"
+                    title="Zookeeper"
+                    rel="4">Zookeeper</a>
+        
+                <a data-sort="0106" 
+                    href="/archive/?tag=%E5%BE%AE%E6%9C%8D%E5%8A%A1"
+                    title="微服务"
+                    rel="3">微服务</a>
+        
+                <a data-sort="0106" 
+                    href="/archive/?tag=%E7%AE%97%E6%B3%95"
+                    title="算法"
+                    rel="3">算法</a>
+        
+                <a data-sort="0106" 
+                    href="/archive/?tag=Docker"
+                    title="Docker"
+                    rel="3">Docker</a>
+        
+                <a data-sort="0107" 
+                    href="/archive/?tag=%E5%B7%A5%E4%BD%9C%E9%A1%B9%E7%9B%AE%E6%80%9D%E8%80%83"
+                    title="工作项目思考"
+                    rel="2">工作项目思考</a>
+        
+                <a data-sort="0107" 
+                    href="/archive/?tag=%E7%BA%BF%E4%B8%8A%E4%BA%8B%E6%95%85"
+                    title="线上事故"
+                    rel="2">线上事故</a>
+        
+                <a data-sort="0107" 
+                    href="/archive/?tag=ChatGPT"
+                    title="ChatGPT"
+                    rel="2">ChatGPT</a>
+        
+                <a data-sort="0107" 
+                    href="/archive/?tag=Java"
+                    title="Java"
+                    rel="2">Java</a>
+        
+                <a data-sort="0107" 
+                    href="/archive/?tag=MQTT"
+                    title="MQTT"
+                    rel="2">MQTT</a>
+        
+                <a data-sort="0107" 
+                    href="/archive/?tag=MyBatis"
+                    title="MyBatis"
+                    rel="2">MyBatis</a>
+        
+                <a data-sort="0107" 
+                    href="/archive/?tag=NIO"
+                    title="NIO"
+                    rel="2">NIO</a>
+        
+                <a data-sort="0107" 
+                    href="/archive/?tag=Netty"
+                    title="Netty"
+                    rel="2">Netty</a>
+        
+                <a data-sort="0107" 
+                    href="/archive/?tag=SpringCloud"
+                    title="SpringCloud"
+                    rel="2">SpringCloud</a>
+        
+                <a data-sort="0107" 
+                    href="/archive/?tag=SpringCloud-GateWay"
+                    title="SpringCloud-GateWay"
+                    rel="2">SpringCloud-GateWay</a>
+        
+                <a data-sort="0107" 
+                    href="/archive/?tag=k8s"
+                    title="k8s"
+                    rel="2">k8s
+    </div>
+</section>
+
+
+                <!-- Friends Blog -->
+<!--                -->
+            </div>
+        </div>
+    </div>
+</article>
+
+<!-- add support for mathjax by voleking-->
+
+
+
+<!-- Page-view counter: Busuanzi does not accept localhost or 127.0.0.1. -->
+<script src="https://cdn.busuanzi.cc/busuanzi/3.6.9/busuanzi.min.js" defer></script>
+
+
+
+
+
+<!-- async load function -->
+<script>
+    function async(u, c) {
+      var d = document, t = 'script',
+          o = d.createElement(t),
+          s = d.getElementsByTagName(t)[0];
+      o.src = u;
+      if (c) { o.addEventListener('load', function (e) { c(null, e); }, false); }
+      s.parentNode.insertBefore(o, s);
+    }
+</script>
+<!-- anchor-js, Doc:http://bryanbraun.github.io/anchorjs/ -->
+<script>
+    async("//cdnjs.cloudflare.com/ajax/libs/anchor-js/1.1.1/anchor.min.js",function(){
+        anchors.options = {
+          visible: 'always',
+          placement: 'right',
+          icon: '#'
+        };
+        anchors.add().remove('.intro-header h1').remove('.subheading').remove('.sidebar-container h5');
+    })
+</script>
+<style>
+    /* place left on bigger screen */
+    @media all and (min-width: 800px) {
+        .anchorjs-link{
+            position: absolute;
+            left: -0.75em;
+            font-size: 1.1em;
+            margin-top : -0.1em;
+        }
+    }
+</style>
+
+
+
+    <!-- Footer -->
+<footer>
+    <div class="container">
+        <div class="row">
+            <div class="col-lg-8 col-lg-offset-2 col-md-10 col-md-offset-1">
+                <!-- &lt;!&ndash; SNS Link &ndash;&gt;
+                
+
+
+<ul class="list-inline text-center">
+
+
+  
+
+</ul> -->
+
+                <p class="copyright text-muted">
+                    <!-- Copyright &copy; jamie Blog 2026
+                    <br> -->
+                    Copyright &copy; 2016–2026 jamie Blog<br>
+                    Powered by <a href="/about/">jamie</a>
+               </p>
+           </div>
+       </div>
+   </div>
+</footer>
+
+<!-- jQuery -->
+<script src="/js/jquery.min.js "></script>
+
+<!-- Bootstrap Core JavaScript -->
+<!-- Currently, only navbar scroll-down effect at desktop still depends on this -->
+<script src="/js/bootstrap.min.js "></script>
+
+<!-- Custom Theme JavaScript -->
+<script src="/js/hux-blog.min.js "></script>
+<script src="/js/blog-search.js"></script>
+
+
+<!-- Article image preview -->
+<script src="/js/post-image-preview.js"></script>
+
+
+<!-- Service Worker -->
+
+<script src="/js/snackbar.js "></script>
+<script src="/js/sw-registration.js "></script>
+
+
+
+
+<!-- async load function -->
+<script>
+    function async(u, c) {
+      var d = document, t = 'script',
+          o = d.createElement(t),
+          s = d.getElementsByTagName(t)[0];
+      o.src = u;
+      if (c) { o.addEventListener('load', function (e) { c(null, e); }, false); }
+      s.parentNode.insertBefore(o, s);
+    }
+</script>
+
+<!--
+     Because of the native support for backtick-style fenced code blocks
+     right within the Markdown is landed in Github Pages,
+     From V1.6, There is no need for Highlight.js,
+     so Huxblog drops it officially.
+
+     - https://github.com/blog/2100-github-pages-now-faster-and-simpler-with-jekyll-3-0
+     - https://help.github.com/articles/creating-and-highlighting-code-blocks/
+     - https://github.com/jneen/rouge/wiki/list-of-supported-languages-and-lexers
+-->
+<!--
+    <script>
+        async("http://cdn.bootcss.com/highlight.js/8.6/highlight.min.js", function(){
+            hljs.initHighlightingOnLoad();
+        })
+    </script>
+    <link href="http://cdn.bootcss.com/highlight.js/8.6/styles/github.min.css" rel="stylesheet">
+-->
+
+
+
+
+
+<!--fastClick.js -->
+<!-- <script>
+    async("//cdnjs.cloudflare.com/ajax/libs/fastclick/1.0.6/fastclick.min.js", function(){
+        var $nav = document.querySelector("nav");
+        if($nav) FastClick.attach($nav);
+    })
+</script> -->
+
+
+<!-- Google Analytics -->
+
+<script>
+    // dynamic User by Hux
+    var _gaId = 'UA-49627206-1';
+    var _gaDomain = 'jamie.me';
+
+    // Originial
+    (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+    (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+    m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+    });
+    // (window,document,'script','//www.google-analytics.com/analytics.js','ga');
+
+    ga('create', _gaId, _gaDomain);
+    ga('send', 'pageview');
+</script>
+
+
+
+<!-- Baidu Tongji -->
+
+
+
+<!-- Side Catalog -->
+
+<script type="text/javascript">
+    function generateCatalog (selector) {
+
+        // interop with multilangual 
+        if ('' == 'true') {
+            _containerSelector = 'div.post-container.active'
+        } else {
+            _containerSelector = 'div.post-container'
+        }
+
+        // init
+        var P = $(_containerSelector),a,n,t,l,i,c;
+        a = P.find('h1,h2,h3,h4,h5,h6');
+
+        // clean
+        $(selector).html('')
+
+        // appending
+        a.each(function () {
+            n = $(this).prop('tagName').toLowerCase();
+            i = "#"+$(this).prop('id');
+            t = $(this).text();
+            c = $('<a href="'+i+'" rel="nofollow">'+t+'</a>');
+            l = $('<li class="'+n+'_nav"></li>').append(c);
+            $(selector).append(l);
+        });
+        return true;
+    }
+
+    generateCatalog(".catalog-body");
+
+    // toggle side catalog
+    $(".catalog-toggle").click((function(e){
+        e.preventDefault();
+        $('.side-catalog').toggleClass("fold")
+    }))
+
+    /*
+     * Doc: https://github.com/davist11/jQuery-One-Page-Nav
+     * Fork by Hux to support padding
+     */
+    async("/js/jquery.nav.js", function () {
+        $('.catalog-body').onePageNav({
+            currentClass: "active",
+            changeHash: !1,
+            easing: "swing",
+            filter: "",
+            scrollSpeed: 700,
+            scrollOffset: 0,
+            scrollThreshold: .2,
+            begin: null,
+            end: null,
+            scrollChange: null,
+            padding: 80
+        });
+    });
+</script>
+
+
+
+<!-- Multi-Lingual -->
+
+
+
+
+<!-- Image to hack wechat -->
+<!--<img src="/img/icon_wechat.png" width="0" height="0" />-->
+<!-- Migrate from head to bottom, no longer block render and still work -->
+
+</body>
+
+</html>
